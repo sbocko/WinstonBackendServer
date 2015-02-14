@@ -1,5 +1,7 @@
 package sk.upjs.winston.server;
 
+import sk.upjs.winston.database.DatabaseManager;
+
 import java.io.*;
 import java.net.Socket;
 import java.util.Arrays;
@@ -70,6 +72,7 @@ public class RequestProcessor implements Runnable {
             attributeIds[i] = dataInput.readLong();
         }
 
+        new DatabaseManager().getDataset(datasetId);
         File dataFile = receiveDataFile("test.txt");
 
         System.out.println(Arrays.toString(attributeIds));
