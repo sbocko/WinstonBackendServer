@@ -1,6 +1,6 @@
-package sk.upjs.winston;
+package sk.upjs.winston.server;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -9,33 +9,27 @@ public class Main {
     private static int portNumber;
 
 
-
     public static void main(String[] args) throws IOException {
         assignPortNumber(args);
         ServerSocket server = createServerSocket(portNumber);
-
         while (true) {
-            processRequest(server);
+            acceptRequest(server);
         }
-
     }
 
     /**
      * HELPER METHODS
      */
 
-    private static void processRequest(ServerSocket serverSocket) {
-        try {
-            Socket client = serverSocket.accept();
-
-            InputStream in = client.getInputStream();
-            DataInputStream dIn = new DataInputStream(in);
-            String received = dIn.readUTF();
-            System.out.println("RECEIVED: " + received);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private static void acceptRequest(ServerSocket serverSocket) {
+            try {
+                Socket client = serverSocket.accept();
+                RequestProcessor request = new RequestProcessor(client);
+                Thread async = new Thread(request);
+                async.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
     }
 
     private static ServerSocket createServerSocket(int port) throws IOException {
