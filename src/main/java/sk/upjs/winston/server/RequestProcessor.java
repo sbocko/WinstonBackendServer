@@ -1,10 +1,17 @@
 package sk.upjs.winston.server;
 
+import sk.upjs.winston.computation.Analyzer;
 import sk.upjs.winston.database.DatabaseManager;
+import sk.upjs.winston.helper.FileManipulationUtilities;
+import sk.upjs.winston.model.Attribute;
+import sk.upjs.winston.model.Dataset;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by stefan on 2/14/15.
@@ -16,8 +23,6 @@ public class RequestProcessor implements Runnable {
 
     private static final String RETURN_CODE_OK = "200: OK";
     private static final String RETURN_CODE_ERR = "400: ERR";
-
-    private static final String DATA_FILES_DIRECTORY = "datasets";
 
     private Socket connection;
     private DataInputStream dataInput;
@@ -55,6 +60,7 @@ public class RequestProcessor implements Runnable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            System.out.println("THREAD FINISHED...");
         }
     }
 
@@ -64,22 +70,37 @@ public class RequestProcessor implements Runnable {
 
     private void processCommandPreprocessing() throws IOException {
         long datasetId = dataInput.readLong();
+        DatabaseManager databaseManager = new DatabaseManager();
+
+        Dataset toPreprocess = databaseManager.getDataset(datasetId);
+        System.out.println("PREPROCESSING: " + toPreprocess);
+
         long targetAttributeId = dataInput.readLong();
+        Attribute target = databaseManager.getAttribute(targetAttributeId);
+
         int numberOfAttributesToBinarize = dataInput.readInt();
-
-        long[] attributeIds = new long[numberOfAttributesToBinarize];
-        for (int i = 0; i < attributeIds.length; i++) {
-            attributeIds[i] = dataInput.readLong();
+        Set<Long> attributeIds = new HashSet<Long>(numberOfAttributesToBinarize);
+        for (int i = 0; i < numberOfAttributesToBinarize; i++) {
+            attributeIds.add(dataInput.readLong());
         }
+        Map<Attribute, Boolean> attributesToSplit = new HashMap<Attribute, Boolean>();
+        for (Attribute attribute : toPreprocess.getAttributes()) {
+            if (attributeIds.contains(attribute.getId())) {
+                attributesToSplit.put(attribute, true);
+            } else {
+                attributesToSplit.put(attribute, false);
+            }
+        }
+        System.out.println(attributesToSplit);
 
-        new DatabaseManager().getDataset(datasetId);
-        File dataFile = receiveDataFile("test.txt");
+        File dataFile = receiveDataFile(toPreprocess.getArffDataFile());
 
-        System.out.println(Arrays.toString(attributeIds));
+        Analyzer analyzer = new Analyzer();
+        analyzer.generateAnalyzes(toPreprocess, dataFile, attributesToSplit, target);
     }
 
     private File receiveDataFile(String filename) throws IOException {
-        File received = createFileForPath(DATA_FILES_DIRECTORY + "/" + filename);
+        File received = FileManipulationUtilities.createFileForPath(FileManipulationUtilities.DATA_FILES_DIRECTORY + "/" + filename);
         FileOutputStream fos = new FileOutputStream(received);
         BufferedOutputStream bos = new BufferedOutputStream(fos);
 
@@ -94,13 +115,6 @@ public class RequestProcessor implements Runnable {
         bos.close();
         fos.close();
         return received;
-    }
-
-    private File createFileForPath(String filepath) throws IOException {
-        File created = new File(filepath);
-        created.getParentFile().mkdirs();
-        created.createNewFile();
-        return created;
     }
 
     private void sendResponseCode(String returnCode) throws IOException {

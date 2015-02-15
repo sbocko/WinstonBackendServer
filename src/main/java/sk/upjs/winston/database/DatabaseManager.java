@@ -1,74 +1,69 @@
 package sk.upjs.winston.database;
 
-import sk.upjs.winston.model.Dataset;
+import sk.upjs.winston.model.*;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Manages the database operations through JDBC.
  */
+
+
 public class DatabaseManager {
-    // JDBC driver name and database URL
-    static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-    static final String DB_URL = "jdbc:mysql://stefanbocko.sk/nh2096401db?useUnicode=yes&characterEncoding=UTF-8";
-    //  Database credentials
-    static final String USER = "nh2096401";
-    static final String PASS = "taraystol";
+
     //table names
     private static final String TABLE_DATASET = "dataset";
     private static final String TABLE_ATTRIBUTE = "attribute";
+    private static final String TABLE_ANALYSIS = "analysis";
+    public static final String CLASS_WINSTON_NUMERIC_ATTRIBUTE = "winston.NumericAttribute";
+    public static final String CLASS_WINSTON_STRING_ATTRIBUTE = "winston.StringAttribute";
+    public static final String CLASS_WINSTON_BOOLEAN_ATTRIBUTE = "winston.BooleanAttribute";
+    public static final int COLUMN_INDEX = 1;
+    public static final int DATA_VERSION = 1;
 
     public Dataset getDataset(long datasetId) {
-        Connection conn = null;
-        Statement stmt = null;
+        Dataset result = null;
+
+        Connection conn = DatabaseConnectionFactory.getConnection();
+        Statement statement = null;
         try {
-            //STEP 2: Register JDBC driver
-            Class.forName(JDBC_DRIVER);
+            statement = conn.createStatement();
+            String query = "SELECT title, data_file, arff_data_file, missing_value_pattern, number_of_missing_values, number_of_instances FROM " + TABLE_DATASET + " WHERE id = " + datasetId + ";";
+            ResultSet rs = statement.executeQuery(query);
 
-            //STEP 3: Open a connection
-            System.out.println("Connecting to database...");
-            conn = DriverManager.getConnection(DB_URL, USER, PASS);
-
-            //STEP 4: Execute a query
-            System.out.println("Creating statement...");
-            stmt = conn.createStatement();
-            String sql;
-            sql = "SELECT arff_data_file, missing_value_pattern, number_of_instances, number_of_missing_values FROM " + TABLE_DATASET + " WHERE id = " + datasetId + ";";
-            ResultSet rs = stmt.executeQuery(sql);
-
-            //STEP 5: Extract data from result set
-            while (rs.next()) {
+            // Extract data from result set
+            if (rs.next()) {
                 //Retrieve by column name
-//                int id = rs.getInt("datasetId");
-//                int age = rs.getInt("age");
-//                String first = rs.getString("first");
+                String title = rs.getString("title");
+                String csvDataFilename = rs.getString("data_file");
                 String arffDataFilename = rs.getString("arff_data_file");
-
-                //Display values
-                System.out.print("DATA FILE NAME: " + arffDataFilename);
-//                System.out.print(", Age: " + age);
-//                System.out.print(", First: " + first);
-//                System.out.println(", Last: " + last);
+                String missingValuePattern = rs.getString("missing_value_pattern");
+                int numberOfMissingValues = rs.getInt("number_of_missing_values");
+                int numberOfInstances = rs.getInt("number_of_instances");
+                List<Attribute> attributes = getAttributesForDataset(conn, datasetId);
+                result = new Dataset(datasetId, title, csvDataFilename, arffDataFilename, missingValuePattern, numberOfMissingValues, numberOfInstances, attributes);
             }
-            //STEP 6: Clean-up environment
-            rs.close();
-            stmt.close();
-            conn.close();
 
-            return null;
+            rs.close();
+            statement.close();
+            conn.close();
+            return result;
         } catch (SQLException se) {
             //Handle errors for JDBC
             se.printStackTrace();
-        } catch (Exception e) {
-            //Handle errors for Class.forName
-            e.printStackTrace();
         } finally {
             //finally block used to close resources
             try {
-                if (stmt != null)
-                    stmt.close();
+                if (statement != null)
+                    statement.close();
             } catch (SQLException se2) {
-            }// nothing we can do
+                // nothing we can do
+            }
             try {
                 if (conn != null)
                     conn.close();
@@ -76,8 +71,159 @@ public class DatabaseManager {
                 se.printStackTrace();
             }//end finally try
         }//end try
-        System.out.println("Goodbye!");
+        return result;
+    }
+
+    public Attribute getAttribute(long attributeId) {
+        Attribute result = null;
+
+        Connection conn = DatabaseConnectionFactory.getConnection();
+        Statement statement = null;
+        try {
+            statement = conn.createStatement();
+            String query = "SELECT dataset_id, number_of_missing_values, position_in_data_file, title, class, average, maximum, minimum, number_of_distinct_values, number_of_false_values, number_of_true_values FROM " + TABLE_ATTRIBUTE + " WHERE id = " + attributeId + ";";
+            ResultSet rs = statement.executeQuery(query);
+
+            // Extract data from result set
+            if (rs.next()) {
+                //Retrieve by column name
+                int numberOfMissingValues = rs.getInt("number_of_missing_values");
+                int positionInDataFile = rs.getInt("position_in_data_file");
+                String title = rs.getString("title");
+                String attributeClass = rs.getString("class");
+
+                if (CLASS_WINSTON_NUMERIC_ATTRIBUTE.equals(attributeClass)) {
+                    double average = rs.getDouble("average");
+                    double maximum = rs.getDouble("maximum");
+                    double minimum = rs.getDouble("minimum");
+                    int numberOfDistinctValues = rs.getInt("number_of_distinct_values");
+                    Attribute numeric = new NumericAttribute(attributeId, title, numberOfMissingValues, positionInDataFile, average, minimum, maximum, numberOfDistinctValues);
+                    result = numeric;
+                } else if (CLASS_WINSTON_STRING_ATTRIBUTE.equals(attributeClass)) {
+                    int numberOfDistinctValues = rs.getInt("number_of_distinct_values");
+                    Attribute string = new StringAttribute(attributeId, title, numberOfMissingValues, positionInDataFile, numberOfDistinctValues);
+                    result = string;
+                } else if (CLASS_WINSTON_BOOLEAN_ATTRIBUTE.equals(attributeClass)) {
+                    int numberOfFalseValues = rs.getInt("number_of_false_values");
+                    int numberOfTrueValues = rs.getInt("number_of_true_values");
+                    Attribute booleanAttribute = new BooleanAttribute(attributeId, title, numberOfMissingValues, positionInDataFile, numberOfTrueValues, numberOfFalseValues);
+                    result = booleanAttribute;
+                }
+            }
+            rs.close();
+            statement.close();
+            conn.close();
+            return result;
+        } catch (SQLException se) {
+            //Handle errors for JDBC
+            se.printStackTrace();
+        } finally {
+            //finally block used to close resources
+            try {
+                if (statement != null)
+                    statement.close();
+            } catch (SQLException se2) {
+                // nothing we can do
+            }
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException se) {
+                se.printStackTrace();
+            }//end finally try
+        }//end try
+        return result;
+    }
+
+    public Long saveAnalysis(Analysis analysis) {
+        Connection conn = DatabaseConnectionFactory.getConnection();
+        Statement statement = null;
+        try {
+            statement = conn.createStatement();
+
+            int analyzedByGridSearch = analysis.isAnalyzedByGridSearch() ? 1 : 0;
+            int gridSearchAnalysisInProgress = analysis.isGridSearchAnalysisInProgress() ? 1 : 0;
+
+            String insertQuery = "INSERT INTO " + TABLE_ANALYSIS
+                    + "(dataset_id, data_file, data_type, number_of_attributes, analyzed_by_grid_search, grid_search_analysis_in_progress, version) " + "VALUES"
+                    + " (" + analysis.getDataset().getId() + ",'" + analysis.getDataFile() + "','" + analysis.getDataType() + "', " + analysis.getNumberOfAttributes() + ", "
+                    + analyzedByGridSearch + ", " + gridSearchAnalysisInProgress + ", " + DATA_VERSION + ")";
+//            System.out.println("QUERY: " + insertQuery);
+
+            statement.executeUpdate(insertQuery);
+            ResultSet rs = statement.getGeneratedKeys();
+
+            Long analysisId = null;
+            if (rs.next()) {
+                analysisId = rs.getLong(COLUMN_INDEX);
+            }
+
+            rs.close();
+            statement.close();
+            conn.close();
+            return analysisId;
+        } catch (SQLException se) {
+            //Handle errors for JDBC
+            se.printStackTrace();
+        } finally {
+            //finally block used to close resources
+            try {
+                if (statement != null)
+                    statement.close();
+            } catch (SQLException se2) {
+                // nothing we can do
+            }
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException se) {
+                se.printStackTrace();
+            }//end finally try
+        }//end try
         return null;
     }
 
+    /**
+     * HELPER METHODS
+     */
+
+    private List<Attribute> getAttributesForDataset(Connection conn, long datasetId) throws SQLException {
+        List<Attribute> datasetAttributes = new ArrayList<Attribute>();
+
+        Statement statement = conn.createStatement();
+        String query = "SELECT id, dataset_id, number_of_missing_values, position_in_data_file, title, class, average, maximum, minimum, number_of_distinct_values, number_of_false_values, number_of_true_values FROM " + TABLE_ATTRIBUTE + " WHERE dataset_id = " + datasetId + ";";
+        ResultSet rs = statement.executeQuery(query);
+
+        // Extract data from result set
+        while (rs.next()) {
+            //Retrieve by column name
+            long id = rs.getLong("id");
+            int numberOfMissingValues = rs.getInt("number_of_missing_values");
+            int positionInDataFile = rs.getInt("position_in_data_file");
+            String title = rs.getString("title");
+            String attributeClass = rs.getString("class");
+
+            if (CLASS_WINSTON_NUMERIC_ATTRIBUTE.equals(attributeClass)) {
+                double average = rs.getDouble("average");
+                double maximum = rs.getDouble("maximum");
+                double minimum = rs.getDouble("minimum");
+                int numberOfDistinctValues = rs.getInt("number_of_distinct_values");
+                Attribute numeric = new NumericAttribute(id, title, numberOfMissingValues, positionInDataFile, average, minimum, maximum, numberOfDistinctValues);
+                datasetAttributes.add(numeric);
+            } else if (CLASS_WINSTON_STRING_ATTRIBUTE.equals(attributeClass)) {
+                int numberOfDistinctValues = rs.getInt("number_of_distinct_values");
+                Attribute string = new StringAttribute(id, title, numberOfMissingValues, positionInDataFile, numberOfDistinctValues);
+                datasetAttributes.add(string);
+            } else if (CLASS_WINSTON_BOOLEAN_ATTRIBUTE.equals(attributeClass)) {
+                int numberOfFalseValues = rs.getInt("number_of_false_values");
+                int numberOfTrueValues = rs.getInt("number_of_true_values");
+                Attribute booleanAttribute = new BooleanAttribute(id, title, numberOfMissingValues, positionInDataFile, numberOfTrueValues, numberOfFalseValues);
+                datasetAttributes.add(booleanAttribute);
+            }
+        }
+
+        rs.close();
+        statement.close();
+        return datasetAttributes;
+    }
 }
