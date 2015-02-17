@@ -19,13 +19,35 @@ public class Analysis {
     private int numberOfAttributes;
     private boolean analyzedByGridSearch = false;
     private boolean gridSearchAnalysisInProgress = false;
-    private List<AnalysisResult> results = new ArrayList<AnalysisResult>();
+//    private List<AnalysisResult> results = new ArrayList<AnalysisResult>();
 
     public Analysis(Dataset dataset, String dataFile, String dataType, int numberOfAttributes) {
         this.dataset = dataset;
         this.dataFile = dataFile;
         this.dataType = dataType;
         this.numberOfAttributes = numberOfAttributes;
+    }
+
+    public Analysis(long id, Dataset dataset, String dataFile, String dataType, int numberOfAttributes, boolean analyzedByGridSearch, boolean gridSearchAnalysisInProgress) {
+        this.id = id;
+        this.dataset = dataset;
+        this.dataFile = dataFile;
+        this.dataType = dataType;
+        this.numberOfAttributes = numberOfAttributes;
+        this.analyzedByGridSearch = analyzedByGridSearch;
+        this.gridSearchAnalysisInProgress = gridSearchAnalysisInProgress;
+    }
+
+    public int getNumberOfInstances() {
+        return this.dataset.getNumberOfInstances();
+    }
+
+    public int getNumberOfMissingValues() {
+        return this.dataset.getNumberOfMissingValues();
+    }
+
+    public String getMissingValuePattern() {
+        return this.dataset.getMissingValuePattern();
     }
 
     public long getId() {
@@ -82,13 +104,5 @@ public class Analysis {
 
     public void setGridSearchAnalysisInProgress(boolean gridSearchAnalysisInProgress) {
         this.gridSearchAnalysisInProgress = gridSearchAnalysisInProgress;
-    }
-
-    public List<AnalysisResult> getResults() {
-        return results;
-    }
-
-    public void setResults(List<AnalysisResult> results) {
-        this.results = results;
     }
 }

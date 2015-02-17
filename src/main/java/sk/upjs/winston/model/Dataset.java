@@ -15,9 +15,10 @@ public class Dataset {
     private String missingValuePattern;
     private int numberOfMissingValues;
     private int numberOfInstances;
+    private User user;
     private List<Attribute> attributes;
 
-    public Dataset(Long id, String title, String dataFile, String arffDataFile, String missingValuePattern, int numberOfMissingValues, int numberOfInstances, List<Attribute> attributes) {
+    public Dataset(Long id, String title, String dataFile, String arffDataFile, String missingValuePattern, int numberOfMissingValues, int numberOfInstances, User user, List<Attribute> attributes) {
         this.id = id;
         this.title = title;
         this.dataFile = dataFile;
@@ -25,7 +26,20 @@ public class Dataset {
         this.missingValuePattern = missingValuePattern;
         this.numberOfMissingValues = numberOfMissingValues;
         this.numberOfInstances = numberOfInstances;
+        this.user = user;
         this.attributes = attributes;
+    }
+
+    public static String getDefaultDelimiter() {
+        return DEFAULT_DELIMITER;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public Long getId() {

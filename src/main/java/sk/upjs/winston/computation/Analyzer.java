@@ -25,6 +25,7 @@ public class Analyzer {
     private static final String DOES_NOT_CONTAIN_ATTRIBUTE_VALUE = "0";
 
     private Preprocessing preprocessing = new Preprocessing();
+    private Modelling modelling = new Modelling();
     private MissingValuesHandler missingValuesHandler = new MissingValuesHandler();
     private DatabaseManager databaseManager = new DatabaseManager();
 
@@ -59,8 +60,12 @@ public class Analyzer {
         long analysisId = databaseManager.saveAnalysis(analysis);
         analysis.setId(analysisId);
 
-//        modellingService.performAnalysisWithDefaultHyperparameters(analysis)
-//        modellingService.performRecommendedDataMiningMethodForAnalysis(analysis)
+        try {
+            modelling.performAnalysisWithDefaultHyperparameters(analysis);
+            modelling.performRecommendedDataMiningMethodForAnalysis(analysis);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
 
 //        modellingService.performGridsearchAnalysisForFile(analysis)
 
@@ -73,7 +78,7 @@ public class Analyzer {
 
     private List<Instances> generatePreprocessedDataInstances(Dataset dataset, List<Instances> toProcess, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
         for (Attribute datasetAttribute : dataset.getAttributes()) {
-            if (attributesToSplit.containsKey(datasetAttribute)) {
+            if (attributesToSplit.get(datasetAttribute)) {
                 continue;
             }
 
