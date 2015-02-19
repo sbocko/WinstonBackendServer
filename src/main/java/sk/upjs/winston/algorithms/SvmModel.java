@@ -65,6 +65,7 @@ public class SvmModel extends Model {
             System.setOut(printStreamOriginal);
             return evaluation.rootMeanSquaredError();
         } catch (Exception e) {
+            System.setOut(printStreamOriginal);
             e.printStackTrace();
         }
 

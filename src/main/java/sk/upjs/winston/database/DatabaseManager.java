@@ -6,10 +6,7 @@ import sk.upjs.winston.algorithms.LogisticRegressionModel;
 import sk.upjs.winston.algorithms.SvmModel;
 import sk.upjs.winston.model.*;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,6 +56,53 @@ public class DatabaseManager {
                 User user = getUser(userId);
                 List<Attribute> attributes = getAttributesForDataset(conn, datasetId);
                 result = new Dataset(datasetId, title, csvDataFilename, arffDataFilename, missingValuePattern, numberOfMissingValues, numberOfInstances, user, attributes);
+            }
+
+            rs.close();
+            statement.close();
+            conn.close();
+            return result;
+        } catch (SQLException se) {
+            //Handle errors for JDBC
+            se.printStackTrace();
+        } finally {
+            //finally block used to close resources
+            try {
+                if (statement != null)
+                    statement.close();
+            } catch (SQLException se2) {
+                // nothing we can do
+            }
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException se) {
+                se.printStackTrace();
+            }//end finally try
+        }//end try
+        return result;
+    }
+
+    public Analysis getAnalysis(long analysisId) {
+        Analysis result = null;
+
+        Connection conn = DatabaseConnectionFactory.getConnection();
+        Statement statement = null;
+        try {
+            statement = conn.createStatement();
+            String query = "SELECT id, dataset_id, data_file, data_type, number_of_attributes, analyzed_by_grid_search, grid_search_analysis_in_progress FROM " + TABLE_ANALYSIS + " WHERE id = " + analysisId + ";";
+            ResultSet rs = statement.executeQuery(query);
+
+            // Extract data from result set
+            if (rs.next()) {
+                //Retrieve by column name
+                Dataset dataset = getDataset(rs.getLong("dataset_id"));
+                String dataFile = rs.getString("data_file");
+                String dataType = rs.getString("data_type");
+                int numberOfAttributes = rs.getInt("number_of_attributes");
+                boolean analyzedByGridSearch = rs.getBoolean("analyzed_by_grid_search");
+                boolean gridSearchAnalysisInProgress = rs.getBoolean("grid_search_analysis_in_progress");
+                result = new Analysis(analysisId, dataset, dataFile, dataType, numberOfAttributes, analyzedByGridSearch, gridSearchAnalysisInProgress);
             }
 
             rs.close();
@@ -187,6 +231,43 @@ public class DatabaseManager {
             }//end finally try
         }//end try
         return user;
+    }
+
+    public void updateAnalysis(Analysis analysis) {
+        Connection conn = DatabaseConnectionFactory.getConnection();
+        PreparedStatement update = null;
+
+        try {
+            update = conn.prepareStatement("UPDATE " + TABLE_ANALYSIS + " SET dataset_id = ?, data_file = ?, number_of_attributes = ?, analyzed_by_grid_search = ?, grid_search_analysis_in_progress = ? WHERE id = ?");
+            update.setLong(1, analysis.getDataset().getId());
+            update.setString(2, analysis.getDataFile());
+            update.setInt(3, analysis.getNumberOfAttributes());
+            update.setBoolean(4, analysis.isAnalyzedByGridSearch());
+            update.setBoolean(5, analysis.isGridSearchAnalysisInProgress());
+            update.setLong(6, analysis.getId());
+
+            update.executeUpdate();
+
+            update.close();
+            conn.close();
+        } catch (SQLException se) {
+            //Handle errors for JDBC
+            se.printStackTrace();
+        } finally {
+            //finally block used to close resources
+            try {
+                if (update != null)
+                    update.close();
+            } catch (SQLException se2) {
+                // nothing we can do
+            }
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException se) {
+                se.printStackTrace();
+            }//end finally try
+        }//end try
     }
 
     public AnalysisResult defaultKnnResultForAnalysis(Analysis analysis) {

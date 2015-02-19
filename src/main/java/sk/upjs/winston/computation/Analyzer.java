@@ -77,6 +77,7 @@ public class Analyzer {
      */
 
     private List<Instances> generatePreprocessedDataInstances(Dataset dataset, List<Instances> toProcess, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
+//        if(1==1)return toProcess;
         for (Attribute datasetAttribute : dataset.getAttributes()) {
             if (attributesToSplit.get(datasetAttribute)) {
                 continue;

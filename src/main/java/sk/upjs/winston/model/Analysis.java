@@ -105,4 +105,17 @@ public class Analysis {
     public void setGridSearchAnalysisInProgress(boolean gridSearchAnalysisInProgress) {
         this.gridSearchAnalysisInProgress = gridSearchAnalysisInProgress;
     }
+
+    @Override
+    public String toString() {
+        return "Analysis{" +
+                "id=" + id +
+                ", dataset=" + dataset.getTitle() +
+                ", dataFile='" + dataFile + '\'' +
+                ", dataType='" + dataType + '\'' +
+                ", numberOfAttributes=" + numberOfAttributes +
+                ", analyzedByGridSearch=" + analyzedByGridSearch +
+                ", gridSearchAnalysisInProgress=" + gridSearchAnalysisInProgress +
+                '}';
+    }
 }

@@ -1,6 +1,10 @@
 package sk.upjs.winston.helper;
 
-import javax.mail.*;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.util.Properties;
@@ -13,34 +17,32 @@ public class Mailer {
     private static final String password = "dataminingkosice";
 
     public static void sendEmail(String to, String subject, String body) {
-
-
-        Properties props = new Properties();
+        Properties props = System.getProperties();
+        String host = "smtp.gmail.com";
         props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.user", username);
+        props.put("mail.smtp.password", password);
         props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.auth", "true");
 
-        Session session = Session.getInstance(props,
-                new javax.mail.Authenticator() {
-                    protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(username, password);
-                    }
-                });
+        Session session = Session.getDefaultInstance(props);
+        MimeMessage message = new MimeMessage(session);
 
         try {
-
-            Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(username));
-            message.setRecipients(Message.RecipientType.TO,
-                    InternetAddress.parse(to));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+
             message.setSubject(subject);
             message.setText(body);
-
-            Transport.send(message);
-        } catch (MessagingException e) {
-            System.err.println("UNABLE TO SEND EMAIL TO: " + to + " WITH BODY: " + body);
-            e.printStackTrace();
+            Transport transport = session.getTransport("smtp");
+            transport.connect(host, username, password);
+            transport.sendMessage(message, message.getAllRecipients());
+            transport.close();
+        } catch (AddressException ae) {
+            ae.printStackTrace();
+        } catch (MessagingException me) {
+            me.printStackTrace();
         }
     }
 }

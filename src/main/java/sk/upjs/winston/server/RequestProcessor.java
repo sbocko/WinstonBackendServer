@@ -1,8 +1,10 @@
 package sk.upjs.winston.server;
 
 import sk.upjs.winston.computation.Analyzer;
+import sk.upjs.winston.computation.Modelling;
 import sk.upjs.winston.database.DatabaseManager;
 import sk.upjs.winston.helper.FileManipulationUtilities;
+import sk.upjs.winston.model.Analysis;
 import sk.upjs.winston.model.Attribute;
 import sk.upjs.winston.model.Dataset;
 
@@ -42,9 +44,11 @@ public class RequestProcessor implements Runnable {
             if (COMMAND_PREPROCESS.equals(command)) {
                 processCommandPreprocessing();
             } else if (COMMAND_GRID_SEARCH.equals(command)) {
-                // TODO
+                processCommandGridSearch();
             } else if (COMMAND_GET_FILE.equals(command)) {
                 // TODO
+            } else {
+                System.out.println("UNKNOWN COMMAND: " + command);
             }
             sendResponseCode(RETURN_CODE_OK);
         } catch (IOException e) {
@@ -67,6 +71,17 @@ public class RequestProcessor implements Runnable {
     /**
      * HELPER METHODS
      */
+
+    private void processCommandGridSearch() throws IOException {
+        long analysisId = dataInput.readLong();
+        DatabaseManager databaseManager = new DatabaseManager();
+
+        Analysis toAnalyze = databaseManager.getAnalysis(analysisId);
+        System.out.println("GRID SEARCH FOR: " + toAnalyze);
+
+        Modelling modelling = new Modelling();
+        modelling.performGridsearchAnalysisForFile(toAnalyze);
+    }
 
     private void processCommandPreprocessing() throws IOException {
         long datasetId = dataInput.readLong();

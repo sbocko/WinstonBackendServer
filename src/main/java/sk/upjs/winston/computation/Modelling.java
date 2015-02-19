@@ -100,6 +100,7 @@ public class Modelling {
 
     public void performGridsearchAnalysisForFile(Analysis analysis) throws IOException {
         analysis.setGridSearchAnalysisInProgress(true);
+        databaseManager.updateAnalysis(analysis);
         File arffFile = getArffFileForAnalysis(analysis);
 
         BufferedReader reader = new BufferedReader(
@@ -249,6 +250,7 @@ public class Modelling {
         System.out.println("svm done");
         analysis.setAnalyzedByGridSearch(true);
         analysis.setGridSearchAnalysisInProgress(false);
+        databaseManager.updateAnalysis(analysis);
         System.out.println("gridsearch finished");
     }
 
