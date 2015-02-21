@@ -21,7 +21,6 @@ import java.util.Set;
  * Created by stefan on 2/16/15.
  */
 public class Modelling {
-    public static final String WEB_SERVER_URL = "http://localhost:8080";
     private DatabaseManager databaseManager = new DatabaseManager();
 
     public void performRecommendedDataMiningMethodForAnalysis(Analysis analysis) throws IOException {
@@ -114,7 +113,7 @@ public class Modelling {
         long analysisId = analysis.getId();
 
         gridSearch(analysis, dataInstances);
-        informUserByEmail(email, filename, analysisId);
+        informUserByEmailAboutGridSearchResults(email, filename, analysisId);
     }
 
     /**
@@ -213,10 +212,10 @@ public class Modelling {
         return new File(filepath);
     }
 
-    public void informUserByEmail(String email, String dataFileName, long analysisId) {
+    public void informUserByEmailAboutGridSearchResults(String email, String dataFileName, long analysisId) {
         System.out.println("preparing to send email");
         String subject = "Winston - analysis finished: " + dataFileName;
-        String body = "Hello,\n\n results are waiting for you at\n\n" + WEB_SERVER_URL + "/winston/analysis/show/" + analysisId + "\n\nThank you!";
+        String body = "Hello,\n\n results are waiting for you at\n\n" + Mailer.WEB_SERVER_URL + "/winston/analysis/show/" + analysisId + "\n\nThank you!";
         Mailer.sendEmail(email, subject, body);
         System.out.println("mail sent");
     }

@@ -1,5 +1,6 @@
 package sk.upjs.winston.computation;
 
+import sk.upjs.winston.helper.Mailer;
 import sk.upjs.winston.model.Attribute;
 import sk.upjs.winston.model.Dataset;
 import sk.upjs.winston.model.NumericAttribute;

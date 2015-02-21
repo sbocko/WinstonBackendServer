@@ -3,6 +3,7 @@ package sk.upjs.winston.computation;
 import org.apache.commons.io.FileUtils;
 import sk.upjs.winston.database.DatabaseManager;
 import sk.upjs.winston.helper.FileManipulationUtilities;
+import sk.upjs.winston.helper.Mailer;
 import sk.upjs.winston.model.*;
 import weka.core.AttributeStats;
 import weka.core.Instances;
@@ -29,6 +30,19 @@ public class Analyzer {
     private MissingValuesHandler missingValuesHandler = new MissingValuesHandler();
     private DatabaseManager databaseManager = new DatabaseManager();
 
+    public void generateDefaultAnalysis(Dataset dataset, File arffData, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
+        try {
+            BufferedReader r = new BufferedReader(
+                    new FileReader(arffData));
+            Instances original = new Instances(r);
+            original = binarizeDataInstances(dataset, original, attributesToSplit);
+            String fileName = saveInstancesToFiles(original, dataset.getTitle());
+            createAnalysis(dataset, fileName, original);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
     public List<Analysis> generateAnalyzes(Dataset dataset, File arffData, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
         List<Analysis> analyzes = new ArrayList<Analysis>();
 
@@ -45,6 +59,8 @@ public class Analyzer {
                 String fileName = saveInstancesToFiles(instances, dataset.getTitle());
                 analyzes.add(createAnalysis(dataset, fileName, instances));
             }
+
+            informUserByEmailAboutPreprocessingResults(dataset.getUser().getEmail(), dataset);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -125,9 +141,13 @@ public class Analyzer {
     private List<Instances> generateBinarizedDataInstances(Dataset dataset, List<Instances> toBinarize, Map<Attribute, Boolean> attributesToSplit) {
         List<Instances> binarized = new ArrayList<Instances>();
         for (Instances actual : toBinarize) {
-            binarized.add(preprocessing.binarize(dataset, actual, attributesToSplit));
+            binarized.add(binarizeDataInstances(dataset, actual, attributesToSplit));
         }
         return binarized;
+    }
+
+    private Instances binarizeDataInstances(Dataset dataset, Instances toBinarize, Map<Attribute, Boolean> attributesToSplit) {
+        return preprocessing.binarize(dataset, toBinarize, attributesToSplit);
     }
 
     private String saveInstancesToFiles(Instances toSave, String datasetTitle) {
@@ -330,5 +350,13 @@ public class Analyzer {
             array[i] = value;
         }
         return array;
+    }
+
+    private void informUserByEmailAboutPreprocessingResults(String email, Dataset dataset) {
+        System.out.println("preparing to send email");
+        String subject = "Winston - preprocessing finished: " + dataset.getTitle();
+        String body = "Hello,\n\n we processed your dataset in many ways and performed basic analyses. The results are waiting for you at\n\n" + Mailer.WEB_SERVER_URL + "/winston/dataset/show/" + dataset.getId() + "\n\nThank you!";
+        Mailer.sendEmail(email, subject, body);
+        System.out.println("mail sent");
     }
 }

@@ -278,7 +278,7 @@ public class DatabaseManager {
         try {
             statement = conn.createStatement();
             String query = "SELECT rmse FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId() +
-                    " and class = " + CLASS_WINSTON_KNN_RESULT + " and k = " + KnnModel.DEFAULT_KNN_PARAMETER_K
+                    " and class = '" + CLASS_WINSTON_KNN_RESULT + "' and k = " + KnnModel.DEFAULT_KNN_PARAMETER_K
                     + ";";
             ResultSet rs = statement.executeQuery(query);
 
@@ -323,7 +323,7 @@ public class DatabaseManager {
             statement = conn.createStatement();
             int unpruned = DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_UNPRUNED ? 1 : 0;
             String query = "SELECT rmse FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId()
-                    + " and class = " + CLASS_WINSTON_DECISION_TREE_RESULT + " and confidence_factor = "
+                    + " and class = '" + CLASS_WINSTON_DECISION_TREE_RESULT + "' and confidence_factor = "
                     + DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_PRUNING + " and minimum_number_of_instances_per_leaf = "
                     + DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_MIN_NUMBER_OF_INSTANCES + " and unpruned = "
                     + unpruned + ";";
@@ -369,7 +369,7 @@ public class DatabaseManager {
         try {
             statement = conn.createStatement();
             String query = "SELECT rmse FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId()
-                    + " and class = " + CLASS_WINSTON_LOGISTIC_REGRESSION_RESULT + " and ridge = "
+                    + " and class = '" + CLASS_WINSTON_LOGISTIC_REGRESSION_RESULT + "' and ridge = "
                     + LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_RIDGE + " and maximum_number_of_iterations = "
                     + LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_MAXIMUM_NUMBER_OF_ITERATIONS
                     + ";";
@@ -415,7 +415,7 @@ public class DatabaseManager {
         try {
             statement = conn.createStatement();
             String query = "SELECT rmse FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId()
-                    + " and class = " + CLASS_WINSTON_SVM_RESULT + " and kernel = '"
+                    + " and class = '" + CLASS_WINSTON_SVM_RESULT + "' and kernel = '"
                     + SvmModel.DEFAULT_SVM_PARAMETER_KERNEL + "' and complexity_constant = "
                     + SvmModel.DEFAULT_SVM_PARAMETER_C_COMPLEXITY_CONSTANT + " and gamma = "
                     + SvmModel.DEFAULT_SVM_PARAMETER_GAMMA + ";";

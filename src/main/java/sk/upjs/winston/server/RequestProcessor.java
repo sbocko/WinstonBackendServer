@@ -21,18 +21,21 @@ import java.util.Set;
 public class RequestProcessor implements Runnable {
     private static final String COMMAND_PREPROCESS = "preprocess";
     private static final String COMMAND_GRID_SEARCH = "grid_search";
-    private static final String COMMAND_GET_FILE = "get_file";
+    private static final String COMMAND_FILE_REQUEST = "file_request";
 
     private static final String RETURN_CODE_OK = "200: OK";
     private static final String RETURN_CODE_ERR = "400: ERR";
 
     private Socket connection;
     private DataInputStream dataInput;
+    private DataOutputStream dataOutput;
 
     public RequestProcessor(Socket connection) throws IOException {
         this.connection = connection;
         InputStream in = connection.getInputStream();
         dataInput = new DataInputStream(in);
+        OutputStream out = connection.getOutputStream();
+        dataOutput = new DataOutputStream(out);
     }
 
     @Override
@@ -45,12 +48,11 @@ public class RequestProcessor implements Runnable {
                 processCommandPreprocessing();
             } else if (COMMAND_GRID_SEARCH.equals(command)) {
                 processCommandGridSearch();
-            } else if (COMMAND_GET_FILE.equals(command)) {
-                // TODO
+            } else if (COMMAND_FILE_REQUEST.equals(command)) {
+                processCommandFileRequest();
             } else {
                 System.out.println("UNKNOWN COMMAND: " + command);
             }
-            sendResponseCode(RETURN_CODE_OK);
         } catch (IOException e) {
             e.printStackTrace();
             try {
@@ -68,9 +70,16 @@ public class RequestProcessor implements Runnable {
         }
     }
 
+
     /**
      * HELPER METHODS
      */
+
+    private void processCommandFileRequest() throws IOException {
+        String filename = dataInput.readUTF();
+        String filepath = FileManipulationUtilities.PREPARED_DATAFILES_DIRECTORY + "/" + filename;
+        sendDataFile(filepath);
+    }
 
     private void processCommandGridSearch() throws IOException {
         long analysisId = dataInput.readLong();
@@ -81,6 +90,8 @@ public class RequestProcessor implements Runnable {
 
         Modelling modelling = new Modelling();
         modelling.performGridsearchAnalysisForFile(toAnalyze);
+
+        sendResponseCode(RETURN_CODE_OK);
     }
 
     private void processCommandPreprocessing() throws IOException {
@@ -110,7 +121,12 @@ public class RequestProcessor implements Runnable {
 
         File dataFile = receiveDataFile(toPreprocess.getArffDataFile());
 
+        System.out.println("file received");
+
         Analyzer analyzer = new Analyzer();
+        analyzer.generateDefaultAnalysis(toPreprocess, dataFile, attributesToSplit, target);
+        sendResponseCode(RETURN_CODE_OK);
+
         analyzer.generateAnalyzes(toPreprocess, dataFile, attributesToSplit, target);
     }
 
@@ -133,9 +149,29 @@ public class RequestProcessor implements Runnable {
     }
 
     private void sendResponseCode(String returnCode) throws IOException {
-        OutputStream out = connection.getOutputStream();
-        DataOutputStream dataOutput = new DataOutputStream(out);
         dataOutput.writeUTF(returnCode);
+    }
+
+    private void sendDataFile(String filepath) throws IOException {
+        File file = new File(filepath);
+        long length = file.length();
+        if (length > Integer.MAX_VALUE) {
+            System.out.println("File is too large.");
+            return;
+        }
+
+        byte[] bytes = new byte[(int) length];
+        FileInputStream fis = new FileInputStream(file);
+        BufferedInputStream bis = new BufferedInputStream(fis);
+
+        int count;
+        while ((count = bis.read(bytes)) > 0) {
+            dataOutput.write(bytes, 0, count);
+        }
+
+        dataOutput.flush();
+        fis.close();
+        bis.close();
     }
 
 }
