@@ -6,8 +6,8 @@ package sk.upjs.winston.model;
 public class KnnResult extends AnalysisResult {
     private int k;
 
-    public KnnResult(long analysis_id, double rmse, int k) {
-        super(analysis_id, rmse);
+    public KnnResult(long analysis_id, double rmse, double meanAbsoluteError, int correctlyClassified, int incorrectlyClassified, String summary, int k) {
+        super(analysis_id, rmse, meanAbsoluteError, correctlyClassified, incorrectlyClassified, summary);
         this.k = k;
     }
 

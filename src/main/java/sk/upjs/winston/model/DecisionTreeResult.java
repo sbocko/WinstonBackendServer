@@ -8,8 +8,8 @@ public class DecisionTreeResult extends AnalysisResult {
     private int minimumNumberOfInstancesPerLeaf;
     private boolean unpruned;
 
-    public DecisionTreeResult(long analysis_id, double rmse, double confidenceFactor, int minimumNumberOfInstancesPerLeaf, boolean unpruned) {
-        super(analysis_id, rmse);
+    public DecisionTreeResult(long analysis_id, double rmse, double meanAbsoluteError, int correctlyClassified, int incorrectlyClassified, String summary, double confidenceFactor, int minimumNumberOfInstancesPerLeaf, boolean unpruned) {
+        super(analysis_id, rmse, meanAbsoluteError, correctlyClassified, incorrectlyClassified, summary);
         this.confidenceFactor = confidenceFactor;
         this.minimumNumberOfInstancesPerLeaf = minimumNumberOfInstancesPerLeaf;
         this.unpruned = unpruned;

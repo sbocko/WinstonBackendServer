@@ -355,7 +355,7 @@ public class Analyzer {
     private void informUserByEmailAboutPreprocessingResults(String email, Dataset dataset) {
         System.out.println("preparing to send email");
         String subject = "Winston - preprocessing finished: " + dataset.getTitle();
-        String body = "Hello,\n\n we processed your dataset in many ways and performed basic analyses. The results are waiting for you at\n\n" + Mailer.WEB_SERVER_URL + "/winston/dataset/show/" + dataset.getId() + "\n\nThank you!";
+        String body = "Hello,\n\n we processed your dataset in many ways and performed basic analyzes. The results are waiting for you at\n\n" + Mailer.WEB_SERVER_URL + "/winston/dataset/show/" + dataset.getId() + "\n\nThank you!";
         Mailer.sendEmail(email, subject, body);
         System.out.println("mail sent");
     }

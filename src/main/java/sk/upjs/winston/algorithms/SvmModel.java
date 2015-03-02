@@ -32,7 +32,7 @@ public class SvmModel extends Model {
 
     /**
      * Performes SMO algorithm and evaluates results 10 times with 10-fold cross validation method.
-     * Returnes the mean squared error for given model.
+     * Returnes the Evaluation object for given model.
      * <p/>
      * WARNING: Surpresses the System.out
      *
@@ -40,9 +40,9 @@ public class SvmModel extends Model {
      * @param kernel             SVM kernel to use
      * @param complexityConstant -C parameter of SMO algorithm
      * @param gamma              gamma parameter of libsvm
-     * @return root mean squared error
+     * @return evaluation
      */
-    public double svm(Instances dataInstances, String kernel, double complexityConstant, double gamma) {
+    public Evaluation svm(Instances dataInstances, String kernel, double complexityConstant, double gamma) {
         PrintStream printStreamOriginal = System.out;
         System.setOut(new PrintStream(new OutputStream() {
             public void write(int b) {
@@ -63,7 +63,7 @@ public class SvmModel extends Model {
             evaluation.crossValidateModel(svm, dataInstances, 5, new Random(1));
 
             System.setOut(printStreamOriginal);
-            return evaluation.rootMeanSquaredError();
+            return evaluation;
         } catch (Exception e) {
             System.setOut(printStreamOriginal);
             e.printStackTrace();
@@ -71,7 +71,7 @@ public class SvmModel extends Model {
 
         System.setOut(printStreamOriginal);
 
-        return Model.ERROR_DURING_CLASSIFICATION;
+        return null;
     }
 
     /**
@@ -86,16 +86,30 @@ public class SvmModel extends Model {
      */
     public Set<AnalysisResult> svmSearch(Analysis analysis, Instances dataInstances) {
         Set<AnalysisResult> results = new HashSet<AnalysisResult>();
-        double rmse;
 
         for (double c = MIN_C; c <= MAX_C; c += STEP_C) {
             for (double g = MIN_G; g <= MAX_G; g *= MULTIPLICATION_STEP_G) {
-                rmse = svm(dataInstances, SvmResult.KERNEL_RBF_KERNEL, c, g);
-                SvmResult svmResult = new SvmResult(analysis.getId(), rmse, SvmResult.KERNEL_RBF_KERNEL, c, g);
-                results.add(svmResult);
-                rmse = svm(dataInstances, SvmResult.KERNEL_LINEAR_KERNEL, c, g);
-                SvmResult svmResult2 = new SvmResult(analysis.getId(), rmse, SvmResult.KERNEL_LINEAR_KERNEL, c, g);
-                results.add(svmResult2);
+                Evaluation trained = svm(dataInstances, SvmResult.KERNEL_RBF_KERNEL, c, g);
+                if (trained != null) {
+                    double rmse = trained.rootMeanSquaredError();
+                    double meanAbsoluteError = trained.meanAbsoluteError();
+                    int correct = (int) trained.correct();
+                    int incorrect = (int) trained.incorrect();
+                    String summary = trained.toSummaryString();
+                    AnalysisResult res = new SvmResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, SvmResult.KERNEL_RBF_KERNEL, c, g);
+                    results.add(res);
+                }
+
+                trained = svm(dataInstances, SvmResult.KERNEL_LINEAR_KERNEL, c, g);
+                if (trained != null) {
+                    double rmse = trained.rootMeanSquaredError();
+                    double meanAbsoluteError = trained.meanAbsoluteError();
+                    int correct = (int) trained.correct();
+                    int incorrect = (int) trained.incorrect();
+                    String summary = trained.toSummaryString();
+                    AnalysisResult res = new SvmResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, SvmResult.KERNEL_LINEAR_KERNEL, c, g);
+                    results.add(res);
+                }
             }
         }
         return results;
@@ -110,15 +124,34 @@ public class SvmModel extends Model {
      * @param analysis      analysis details which belongs to returned search result
      * @return svm search result object
      */
-    public SvmResult svmRandomAnalysis(Instances dataInstances, Analysis analysis) {
+    public AnalysisResult svmRandomAnalysis(Instances dataInstances, Analysis analysis) {
         String kernel = getRandomParameterKernel();
         double complexityConstant = getRandomParameterComplexityConstant(MIN_C, MAX_C * 5);
         double gamma = getRandomParameterGamma(MIN_G, MAX_G);
         if (kernel.equals(SvmResult.KERNEL_RBF_KERNEL)) {
-            return new SvmResult(analysis.getId(), svm(dataInstances, kernel, complexityConstant, gamma), SvmResult.KERNEL_RBF_KERNEL, complexityConstant, gamma);
+            Evaluation trained = svm(dataInstances, kernel, complexityConstant, gamma);
+            if (trained != null) {
+                double rmse = trained.rootMeanSquaredError();
+                double meanAbsoluteError = trained.meanAbsoluteError();
+                int correct = (int) trained.correct();
+                int incorrect = (int) trained.incorrect();
+                String summary = trained.toSummaryString();
+                AnalysisResult res = new SvmResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, SvmResult.KERNEL_RBF_KERNEL, complexityConstant, gamma);
+                return res;
+            }
         } else {
-            return new SvmResult(analysis.getId(), svm(dataInstances, kernel, complexityConstant, gamma), SvmResult.KERNEL_LINEAR_KERNEL, complexityConstant, gamma);
+            Evaluation trained = svm(dataInstances, kernel, complexityConstant, gamma);
+            if (trained != null) {
+                double rmse = trained.rootMeanSquaredError();
+                double meanAbsoluteError = trained.meanAbsoluteError();
+                int correct = (int) trained.correct();
+                int incorrect = (int) trained.incorrect();
+                String summary = trained.toSummaryString();
+                AnalysisResult res = new SvmResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, SvmResult.KERNEL_LINEAR_KERNEL, complexityConstant, gamma);
+                return res;
+            }
         }
+        return null;
     }
 
     /**

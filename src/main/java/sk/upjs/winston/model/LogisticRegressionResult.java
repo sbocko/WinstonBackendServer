@@ -8,8 +8,8 @@ public class LogisticRegressionResult extends AnalysisResult {
     double ridge;
     int maximumNumberOfIterations;
 
-    public LogisticRegressionResult(long analysis_id, double rmse, double ridge, int maximumNumberOfIterations) {
-        super(analysis_id, rmse);
+    public LogisticRegressionResult(long analysis_id, double rmse, double meanAbsoluteError, int correctlyClassified, int incorrectlyClassified, String summary, double ridge, int maximumNumberOfIterations) {
+        super(analysis_id, rmse, meanAbsoluteError, correctlyClassified, incorrectlyClassified, summary);
         this.ridge = ridge;
         this.maximumNumberOfIterations = maximumNumberOfIterations;
     }

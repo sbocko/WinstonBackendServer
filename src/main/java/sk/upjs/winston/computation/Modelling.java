@@ -8,6 +8,7 @@ import sk.upjs.winston.database.DatabaseManager;
 import sk.upjs.winston.helper.FileManipulationUtilities;
 import sk.upjs.winston.helper.Mailer;
 import sk.upjs.winston.model.*;
+import weka.classifiers.Evaluation;
 import weka.core.Instances;
 
 import java.io.BufferedReader;
@@ -39,32 +40,62 @@ public class Modelling {
         if (recommendedMethod instanceof KnnResult) {
             KnnResult recommendedKnn = (KnnResult) recommendedMethod;
             int k = recommendedKnn.getK();
-            double rmse = (new KnnModel()).knn(instances, k);
-            KnnResult knn = new KnnResult(analysis.getId(), rmse, k);
-            databaseManager.saveAnalysisResult(knn);
+            Evaluation trained = (new KnnModel()).knn(instances, k);
+            if (trained != null) {
+                double rmse = trained.rootMeanSquaredError();
+                double meanAbsoluteError = trained.meanAbsoluteError();
+                int correct = (int) trained.correct();
+                int incorrect = (int) trained.incorrect();
+                String summary = trained.toSummaryString();
+                KnnResult knn = new KnnResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, k);
+                databaseManager.saveAnalysisResult(knn);
+            }
         } else if (recommendedMethod instanceof LogisticRegressionResult) {
             LogisticRegressionResult recommendedLogisticRegression = (LogisticRegressionResult) recommendedMethod;
             double ridge = recommendedLogisticRegression.getRidge();
             int maximumNumberOfIterations = recommendedLogisticRegression.getMaximumNumberOfIterations();
-            double rmse = (new LogisticRegressionModel()).logisticRegression(instances, ridge, maximumNumberOfIterations);
-            LogisticRegressionResult logisticRegression = new LogisticRegressionResult(analysis.getId(), rmse, ridge, maximumNumberOfIterations);
-            databaseManager.saveAnalysisResult(logisticRegression);
+
+            Evaluation trained = (new LogisticRegressionModel()).logisticRegression(instances, ridge, maximumNumberOfIterations);
+            if (trained != null) {
+                double rmse = trained.rootMeanSquaredError();
+                double meanAbsoluteError = trained.meanAbsoluteError();
+                int correct = (int) trained.correct();
+                int incorrect = (int) trained.incorrect();
+                String summary = trained.toSummaryString();
+                LogisticRegressionResult logisticRegression = new LogisticRegressionResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, ridge, maximumNumberOfIterations);
+                databaseManager.saveAnalysisResult(logisticRegression);
+            }
         } else if (recommendedMethod instanceof DecisionTreeResult) {
             DecisionTreeResult recommendedDecisionTree = (DecisionTreeResult) recommendedMethod;
             int m = recommendedDecisionTree.getMinimumNumberOfInstancesPerLeaf();
             float c = (float) recommendedDecisionTree.getConfidenceFactor();
             boolean unpruned = recommendedDecisionTree.isUnpruned();
-            double rmse = (new DecisionTreeModel()).j48DecisionTreeAnalysis(instances, m, c, unpruned);
-            DecisionTreeResult decisionTree = new DecisionTreeResult(analysis.getId(), rmse, c, m, unpruned);
-            databaseManager.saveAnalysisResult(decisionTree);
+
+            Evaluation trained = (new DecisionTreeModel()).j48DecisionTreeAnalysis(instances, m, c, unpruned);
+            if (trained != null) {
+                double rmse = trained.rootMeanSquaredError();
+                double meanAbsoluteError = trained.meanAbsoluteError();
+                int correct = (int) trained.correct();
+                int incorrect = (int) trained.incorrect();
+                String summary = trained.toSummaryString();
+                DecisionTreeResult decisionTree = new DecisionTreeResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, c, m, unpruned);
+                databaseManager.saveAnalysisResult(decisionTree);
+            }
         } else if (recommendedMethod instanceof SvmResult) {
             SvmResult recommendedSvm = (SvmResult) recommendedMethod;
             String kernel = recommendedSvm.getKernel();
             double complexityConstant = recommendedSvm.getComplexityConstant();
             double gamma = recommendedSvm.getGamma();
-            double rmse = (new SvmModel()).svm(instances, kernel, complexityConstant, gamma);
-            SvmResult svm = new SvmResult(analysis.getId(), rmse, kernel, complexityConstant, gamma);
-            databaseManager.saveAnalysisResult(svm);
+            Evaluation trained = (new SvmModel()).svm(instances, kernel, complexityConstant, gamma);
+            if (trained != null) {
+                double rmse = trained.rootMeanSquaredError();
+                double meanAbsoluteError = trained.meanAbsoluteError();
+                int correct = (int) trained.correct();
+                int incorrect = (int) trained.incorrect();
+                String summary = trained.toSummaryString();
+                SvmResult svm = new SvmResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, kernel, complexityConstant, gamma);
+                databaseManager.saveAnalysisResult(svm);
+            }
         }
     }
 
@@ -77,24 +108,53 @@ public class Modelling {
         Instances dataInstances = new Instances(reader);
         reader.close();
         dataInstances.setClassIndex(dataInstances.numAttributes() - 1);
+        AnalysisResult res;
 
-        double rmse = (new KnnModel()).knn(dataInstances, KnnModel.DEFAULT_KNN_PARAMETER_K);
-        AnalysisResult res = new KnnResult(analysis.getId(), rmse, KnnModel.DEFAULT_KNN_PARAMETER_K);
-        databaseManager.saveAnalysisResult(res);
+        Evaluation trained = (new KnnModel()).knn(dataInstances, KnnModel.DEFAULT_KNN_PARAMETER_K);
+        if (trained != null) {
+            double rmse = trained.rootMeanSquaredError();
+            double meanAbsoluteError = trained.meanAbsoluteError();
+            int correct = (int) trained.correct();
+            int incorrect = (int) trained.incorrect();
+            String summary = trained.toSummaryString();
+            res = new KnnResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, KnnModel.DEFAULT_KNN_PARAMETER_K);
+            databaseManager.saveAnalysisResult(res);
+        }
 
-        rmse = (new DecisionTreeModel()).j48DecisionTreeAnalysis(dataInstances, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_MIN_NUMBER_OF_INSTANCES,
+        trained = (new DecisionTreeModel()).j48DecisionTreeAnalysis(dataInstances, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_MIN_NUMBER_OF_INSTANCES,
                 DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_PRUNING, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_UNPRUNED);
-        res = new DecisionTreeResult(analysis.getId(), rmse, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_PRUNING,
-                DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_MIN_NUMBER_OF_INSTANCES, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_UNPRUNED);
-        databaseManager.saveAnalysisResult(res);
+        if (trained != null) {
+            double rmse = trained.rootMeanSquaredError();
+            double meanAbsoluteError = trained.meanAbsoluteError();
+            int correct = (int) trained.correct();
+            int incorrect = (int) trained.incorrect();
+            String summary = trained.toSummaryString();
+            res = new DecisionTreeResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_PRUNING,
+                    DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_MIN_NUMBER_OF_INSTANCES, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_UNPRUNED);
+            databaseManager.saveAnalysisResult(res);
+        }
 
-        rmse = (new LogisticRegressionModel()).logisticRegression(dataInstances, LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_RIDGE, LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_MAXIMUM_NUMBER_OF_ITERATIONS);
-        res = new LogisticRegressionResult(analysis.getId(), rmse, LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_RIDGE, LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_MAXIMUM_NUMBER_OF_ITERATIONS);
-        databaseManager.saveAnalysisResult(res);
+        trained = (new LogisticRegressionModel()).logisticRegression(dataInstances, LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_RIDGE, LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_MAXIMUM_NUMBER_OF_ITERATIONS);
+        if (trained != null) {
+            double rmse = trained.rootMeanSquaredError();
+            double meanAbsoluteError = trained.meanAbsoluteError();
+            int correct = (int) trained.correct();
+            int incorrect = (int) trained.incorrect();
+            String summary = trained.toSummaryString();
+            res = new LogisticRegressionResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_RIDGE, LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_MAXIMUM_NUMBER_OF_ITERATIONS);
+            databaseManager.saveAnalysisResult(res);
+        }
 
-        rmse = (new SvmModel()).svm(dataInstances, SvmModel.DEFAULT_SVM_PARAMETER_KERNEL, SvmModel.DEFAULT_SVM_PARAMETER_C_COMPLEXITY_CONSTANT, SvmModel.DEFAULT_SVM_PARAMETER_GAMMA);
-        res = new SvmResult(analysis.getId(), rmse, SvmModel.DEFAULT_SVM_PARAMETER_KERNEL, SvmModel.DEFAULT_SVM_PARAMETER_C_COMPLEXITY_CONSTANT, SvmModel.DEFAULT_SVM_PARAMETER_GAMMA);
-        databaseManager.saveAnalysisResult(res);
+        trained = (new SvmModel()).svm(dataInstances, SvmModel.DEFAULT_SVM_PARAMETER_KERNEL, SvmModel.DEFAULT_SVM_PARAMETER_C_COMPLEXITY_CONSTANT, SvmModel.DEFAULT_SVM_PARAMETER_GAMMA);
+        if (trained != null) {
+            double rmse = trained.rootMeanSquaredError();
+            double meanAbsoluteError = trained.meanAbsoluteError();
+            int correct = (int) trained.correct();
+            int incorrect = (int) trained.incorrect();
+            String summary = trained.toSummaryString();
+            res = new SvmResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, SvmModel.DEFAULT_SVM_PARAMETER_KERNEL, SvmModel.DEFAULT_SVM_PARAMETER_C_COMPLEXITY_CONSTANT, SvmModel.DEFAULT_SVM_PARAMETER_GAMMA);
+            databaseManager.saveAnalysisResult(res);
+        }
     }
 
     public void performGridsearchAnalysisForFile(Analysis analysis) throws IOException {
@@ -143,7 +203,7 @@ public class Modelling {
         double distance = Double.MAX_VALUE;
 
         for (Analysis otherProcessedAnalyse : otherProcessedAnalyses) {
-            if(otherProcessedAnalyse.getId() != analysis.getId()) {
+            if (otherProcessedAnalyse.getId() != analysis.getId()) {
                 double actualDistance = computeDistanceForAnalyses(otherProcessedAnalyse, analysis);
                 if (actualDistance < distance) {
                     distance = actualDistance;

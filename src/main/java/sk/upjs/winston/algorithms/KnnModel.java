@@ -22,13 +22,13 @@ public class KnnModel extends Model {
 
     /**
      * Performes kNN algorithm and evaluates results 10 times with 10-fold cross validation method.
-     * Returnes the mean squared error for given model.
+     * Returnes the evaluation object for given model.
      *
      * @param dataInstances dataset instances
      * @param k             k parameter for kNN algorithm
-     * @return root mean squared error
+     * @return evaluation
      */
-    public double knn(Instances dataInstances, int k) {
+    public Evaluation knn(Instances dataInstances, int k) {
         IBk ibk = new IBk(k);
         Evaluation evaluation;
         try {
@@ -37,10 +37,10 @@ public class KnnModel extends Model {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ERROR_DURING_CLASSIFICATION;
+            return null;
         }
 
-        return evaluation.rootMeanSquaredError();
+        return evaluation;
     }
 
     /**
@@ -54,14 +54,17 @@ public class KnnModel extends Model {
     public Set<AnalysisResult> knnSearch(Analysis analysis, Instances dataInstances) {
         Set<AnalysisResult> results = new HashSet<AnalysisResult>();
         for (int k = MIN_K; k <= MAX_K; k++) {
-            double rmse = knn(dataInstances, k);
-            if (rmse != ERROR_DURING_CLASSIFICATION) {
-                AnalysisResult res = new KnnResult(analysis.getId(), rmse, k);
+            Evaluation trained = knn(dataInstances, k);
+            if (trained != null) {
+                double rmse = trained.rootMeanSquaredError();
+                double meanAbsoluteError = trained.meanAbsoluteError();
+                int correct = (int) trained.correct();
+                int incorrect = (int) trained.incorrect();
+                String summary = trained.toSummaryString();
+                AnalysisResult res = new KnnResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, k);
                 results.add(res);
             }
-
         }
-
         return results;
     }
 
@@ -72,12 +75,21 @@ public class KnnModel extends Model {
      *
      * @param dataInstances dataset instances
      * @param analysis      analysis details which belongs to returned search result
-     * @return knn result object
+     * @return knn result object or null
      */
     public AnalysisResult knnRandomAnalysis(Instances dataInstances, Analysis analysis) {
         int k = getRandomParameterK(MIN_K, MAX_K * 5);
-        double rmse = knn(dataInstances, k);
-        return new KnnResult(analysis.getId(), rmse, k);
+        Evaluation trained = knn(dataInstances, k);
+        if (trained != null) {
+            double rmse = trained.rootMeanSquaredError();
+            double meanAbsoluteError = trained.meanAbsoluteError();
+            int correct = (int) trained.correct();
+            int incorrect = (int) trained.incorrect();
+            String summary = trained.toSummaryString();
+            AnalysisResult res = new KnnResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, k);
+            return res;
+        }
+        return null;
     }
 
     /**
@@ -88,6 +100,7 @@ public class KnnModel extends Model {
      * @param to   max value for the generated random number (exclusive)
      * @return the random int value
      */
+
     public int getRandomParameterK(int from, int to) {
         if (from > to) {
             int f = from;

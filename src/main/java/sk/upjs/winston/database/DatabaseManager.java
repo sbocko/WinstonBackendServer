@@ -277,7 +277,7 @@ public class DatabaseManager {
         Statement statement = null;
         try {
             statement = conn.createStatement();
-            String query = "SELECT rmse FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId() +
+            String query = "SELECT rmse, mean_absolute_error, correctly_classified, incorrectly_classified, summary FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId() +
                     " and class = '" + CLASS_WINSTON_KNN_RESULT + "' and k = " + KnnModel.DEFAULT_KNN_PARAMETER_K
                     + ";";
             ResultSet rs = statement.executeQuery(query);
@@ -286,7 +286,11 @@ public class DatabaseManager {
             if (rs.next()) {
                 //Retrieve by column name
                 double rmse = rs.getDouble("rmse");
-                result = new KnnResult(analysis.getId(), rmse, KnnModel.DEFAULT_KNN_PARAMETER_K);
+                double meanAbsoluteError = rs.getDouble("mean_absolute_error");
+                int correct = rs.getInt("correctly_classified");
+                int incorrect = rs.getInt("incorrectly_classified");
+                String summary = rs.getString("summary");
+                result = new KnnResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, KnnModel.DEFAULT_KNN_PARAMETER_K);
             }
 
             rs.close();
@@ -322,7 +326,7 @@ public class DatabaseManager {
         try {
             statement = conn.createStatement();
             int unpruned = DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_UNPRUNED ? 1 : 0;
-            String query = "SELECT rmse FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId()
+            String query = "SELECT rmse, mean_absolute_error, correctly_classified, incorrectly_classified, summary FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId()
                     + " and class = '" + CLASS_WINSTON_DECISION_TREE_RESULT + "' and confidence_factor = "
                     + DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_PRUNING + " and minimum_number_of_instances_per_leaf = "
                     + DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_MIN_NUMBER_OF_INSTANCES + " and unpruned = "
@@ -333,7 +337,11 @@ public class DatabaseManager {
             if (rs.next()) {
                 //Retrieve by column name
                 double rmse = rs.getDouble("rmse");
-                result = new DecisionTreeResult(analysis.getId(), rmse, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_PRUNING, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_MIN_NUMBER_OF_INSTANCES, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_UNPRUNED);
+                double meanAbsoluteError = rs.getDouble("mean_absolute_error");
+                int correct = rs.getInt("correctly_classified");
+                int incorrect = rs.getInt("incorrectly_classified");
+                String summary = rs.getString("summary");
+                result = new DecisionTreeResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_PRUNING, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_MIN_NUMBER_OF_INSTANCES, DecisionTreeModel.DEFAULT_DECISION_TREE_PARAMETER_UNPRUNED);
             }
 
             rs.close();
@@ -368,7 +376,7 @@ public class DatabaseManager {
         Statement statement = null;
         try {
             statement = conn.createStatement();
-            String query = "SELECT rmse FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId()
+            String query = "SELECT rmse, mean_absolute_error, correctly_classified, incorrectly_classified, summary FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId()
                     + " and class = '" + CLASS_WINSTON_LOGISTIC_REGRESSION_RESULT + "' and ridge = "
                     + LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_RIDGE + " and maximum_number_of_iterations = "
                     + LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_MAXIMUM_NUMBER_OF_ITERATIONS
@@ -379,7 +387,11 @@ public class DatabaseManager {
             if (rs.next()) {
                 //Retrieve by column name
                 double rmse = rs.getDouble("rmse");
-                result = new LogisticRegressionResult(analysis.getId(), rmse, LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_RIDGE, LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_MAXIMUM_NUMBER_OF_ITERATIONS);
+                double meanAbsoluteError = rs.getDouble("mean_absolute_error");
+                int correct = rs.getInt("correctly_classified");
+                int incorrect = rs.getInt("incorrectly_classified");
+                String summary = rs.getString("summary");
+                result = new LogisticRegressionResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_RIDGE, LogisticRegressionModel.DEFAULT_LOGISTIC_REGRESSION_PARAMETER_MAXIMUM_NUMBER_OF_ITERATIONS);
             }
 
             rs.close();
@@ -414,7 +426,7 @@ public class DatabaseManager {
         Statement statement = null;
         try {
             statement = conn.createStatement();
-            String query = "SELECT rmse FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId()
+            String query = "SELECT rmse, mean_absolute_error, correctly_classified, incorrectly_classified, summary FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId()
                     + " and class = '" + CLASS_WINSTON_SVM_RESULT + "' and kernel = '"
                     + SvmModel.DEFAULT_SVM_PARAMETER_KERNEL + "' and complexity_constant = "
                     + SvmModel.DEFAULT_SVM_PARAMETER_C_COMPLEXITY_CONSTANT + " and gamma = "
@@ -425,7 +437,11 @@ public class DatabaseManager {
             if (rs.next()) {
                 //Retrieve by column name
                 double rmse = rs.getDouble("rmse");
-                result = new SvmResult(analysis.getId(), rmse, SvmModel.DEFAULT_SVM_PARAMETER_KERNEL, SvmModel.DEFAULT_SVM_PARAMETER_C_COMPLEXITY_CONSTANT, SvmModel.DEFAULT_SVM_PARAMETER_GAMMA);
+                double meanAbsoluteError = rs.getDouble("mean_absolute_error");
+                int correct = rs.getInt("correctly_classified");
+                int incorrect = rs.getInt("incorrectly_classified");
+                String summary = rs.getString("summary");
+                result = new SvmResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, SvmModel.DEFAULT_SVM_PARAMETER_KERNEL, SvmModel.DEFAULT_SVM_PARAMETER_C_COMPLEXITY_CONSTANT, SvmModel.DEFAULT_SVM_PARAMETER_GAMMA);
             }
 
             rs.close();
@@ -470,24 +486,28 @@ public class DatabaseManager {
                 //Retrieve by column name
                 String resultClass = rs.getString("class");
                 double rmse = rs.getDouble("rmse");
+                double meanAbsoluteError = rs.getDouble("mean_absolute_error");
+                int correct = rs.getInt("correctly_classified");
+                int incorrect = rs.getInt("incorrectly_classified");
+                String summary = rs.getString("summary");
 
                 if (CLASS_WINSTON_KNN_RESULT.equals(resultClass)) {
                     int k = rs.getInt("k");
-                    result = new KnnResult(analysis.getId(), rmse, k);
+                    result = new KnnResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, k);
                 } else if (CLASS_WINSTON_LOGISTIC_REGRESSION_RESULT.equals(resultClass)) {
                     double ridge = rs.getDouble("ridge");
                     int maximumNumberOfIterations = rs.getInt("maximum_number_of_iterations");
-                    result = new LogisticRegressionResult(analysis.getId(), rmse, ridge, maximumNumberOfIterations);
+                    result = new LogisticRegressionResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, ridge, maximumNumberOfIterations);
                 } else if (CLASS_WINSTON_DECISION_TREE_RESULT.equals(resultClass)) {
                     double confidenceFactor = rs.getDouble("confidence_factor");
                     int minimumNumberOfInstancesPerLeaf = rs.getInt("minimum_number_of_instances_per_leaf");
                     boolean unpruned = rs.getBoolean("unpruned");
-                    result = new DecisionTreeResult(analysis.getId(), rmse, confidenceFactor, minimumNumberOfInstancesPerLeaf, unpruned);
+                    result = new DecisionTreeResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, confidenceFactor, minimumNumberOfInstancesPerLeaf, unpruned);
                 } else if (CLASS_WINSTON_SVM_RESULT.equals(resultClass)) {
                     String kernel = rs.getString("kernel");
                     double complexityConstant = rs.getDouble("complexity_constant");
                     double gamma = rs.getDouble("gamma");
-                    result = new SvmResult(analysis.getId(), rmse, kernel, complexityConstant, gamma);
+                    result = new SvmResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, kernel, complexityConstant, gamma);
                 }
             }
 
@@ -625,27 +645,32 @@ public class DatabaseManager {
             if (toSave instanceof KnnResult) {
                 KnnResult knn = (KnnResult) toSave;
                 insertQuery = "INSERT INTO " + TABLE_ANALYSIS_RESULT
-                        + "(analysis_id, rmse, k, class, version) " + "VALUES"
-                        + " (" + knn.getAnalysis_id() + ", " + knn.getRmse() + ", " + knn.getK() + ",'" + CLASS_WINSTON_KNN_RESULT + "', " + DATA_VERSION + ")";
+                        + "(analysis_id, rmse, mean_absolute_error, correctly_classified, incorrectly_classified, summary, k, class, version) " + "VALUES"
+                        + " (" + knn.getAnalysis_id() + ", " + knn.getRmse() + ", "
+                        + knn.getMeanAbsoluteError() + ", " + knn.getCorrectlyClassified() + ", " + knn.getIncorrectlyClassified() + ",'" + knn.getSummary() + "', "
+                        + knn.getK() + ",'" + CLASS_WINSTON_KNN_RESULT + "', " + DATA_VERSION + ")";
             } else if (toSave instanceof LogisticRegressionResult) {
                 LogisticRegressionResult logisticRegression = (LogisticRegressionResult) toSave;
                 insertQuery = "INSERT INTO " + TABLE_ANALYSIS_RESULT
-                        + "(analysis_id, rmse, ridge, maximum_number_of_iterations, class, version) " + "VALUES"
+                        + "(analysis_id, rmse, mean_absolute_error, correctly_classified, incorrectly_classified, summary, ridge, maximum_number_of_iterations, class, version) " + "VALUES"
                         + " (" + logisticRegression.getAnalysis_id() + ", " + logisticRegression.getRmse() + ", "
+                        + logisticRegression.getMeanAbsoluteError() + ", " + logisticRegression.getCorrectlyClassified() + ", " + logisticRegression.getIncorrectlyClassified() + ",'" + logisticRegression.getSummary() + "', "
                         + logisticRegression.getRidge() + ", " + logisticRegression.getMaximumNumberOfIterations() + ",'" + CLASS_WINSTON_LOGISTIC_REGRESSION_RESULT + "', " + DATA_VERSION + ")";
             } else if (toSave instanceof DecisionTreeResult) {
                 DecisionTreeResult decisionTree = (DecisionTreeResult) toSave;
                 int unpruned = decisionTree.isUnpruned() ? 1 : 0;
                 insertQuery = "INSERT INTO " + TABLE_ANALYSIS_RESULT
-                        + "(analysis_id, rmse, confidence_factor, minimum_number_of_instances_per_leaf, unpruned, class, version) " + "VALUES"
+                        + "(analysis_id, rmse,  mean_absolute_error, correctly_classified, incorrectly_classified, summary, confidence_factor, minimum_number_of_instances_per_leaf, unpruned, class, version) " + "VALUES"
                         + " (" + decisionTree.getAnalysis_id() + ", " + decisionTree.getRmse() + ", "
+                        + decisionTree.getMeanAbsoluteError() + ", " + decisionTree.getCorrectlyClassified() + ", " + decisionTree.getIncorrectlyClassified() + ",'" + decisionTree.getSummary() + "', "
                         + decisionTree.getConfidenceFactor() + ", " + decisionTree.getMinimumNumberOfInstancesPerLeaf() + ", " + unpruned + ",'"
                         + CLASS_WINSTON_DECISION_TREE_RESULT + "', " + DATA_VERSION + ")";
             } else if (toSave instanceof SvmResult) {
                 SvmResult svm = (SvmResult) toSave;
                 insertQuery = "INSERT INTO " + TABLE_ANALYSIS_RESULT
-                        + "(analysis_id, rmse, kernel, complexity_constant, gamma, class, version) " + "VALUES"
-                        + " (" + svm.getAnalysis_id() + ", " + svm.getRmse() + ", '"
+                        + "(analysis_id, rmse,  mean_absolute_error, correctly_classified, incorrectly_classified, summary, kernel, complexity_constant, gamma, class, version) " + "VALUES"
+                        + " (" + svm.getAnalysis_id() + ", " + svm.getRmse() + ", "
+                        + svm.getMeanAbsoluteError() + ", " + svm.getCorrectlyClassified() + ", " + svm.getIncorrectlyClassified() + ",'" + svm.getSummary() + "', '"
                         + svm.getKernel() + "', " + svm.getComplexityConstant() + ", " + svm.getGamma() + ",'"
                         + CLASS_WINSTON_SVM_RESULT + "', " + DATA_VERSION + ")";
             }

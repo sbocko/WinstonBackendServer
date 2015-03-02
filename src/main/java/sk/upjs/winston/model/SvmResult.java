@@ -11,8 +11,8 @@ public class SvmResult extends AnalysisResult{
     private double complexityConstant;
     private double gamma;
 
-    public SvmResult(long analysis_id, double rmse, String kernel, double complexityConstant, double gamma) {
-        super(analysis_id, rmse);
+    public SvmResult(long analysis_id, double rmse, double meanAbsoluteError, int correctlyClassified, int incorrectlyClassified, String summary, String kernel, double complexityConstant, double gamma) {
+        super(analysis_id, rmse, meanAbsoluteError, correctlyClassified, incorrectlyClassified, summary);
         this.kernel = kernel;
         this.complexityConstant = complexityConstant;
         this.gamma = gamma;
