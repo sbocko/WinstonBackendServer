@@ -30,20 +30,20 @@ public class Analyzer {
     private MissingValuesHandler missingValuesHandler = new MissingValuesHandler();
     private DatabaseManager databaseManager = new DatabaseManager();
 
-    public void generateDefaultAnalysis(Dataset dataset, File arffData, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
+    public void generateDefaultAnalysis(Dataset dataset, String task, File arffData, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
         try {
             BufferedReader r = new BufferedReader(
                     new FileReader(arffData));
             Instances original = new Instances(r);
             original = binarizeDataInstances(dataset, original, attributesToSplit);
             String fileName = saveInstancesToFiles(original, dataset.getTitle());
-            createAnalysis(dataset, fileName, original);
+            createAnalysis(dataset, task, fileName, original);
         }catch (IOException e){
             e.printStackTrace();
         }
     }
 
-    public List<Analysis> generateAnalyzes(Dataset dataset, File arffData, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
+    public List<Analysis> generateAnalyzes(Dataset dataset, String task, File arffData, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
         List<Analysis> analyzes = new ArrayList<Analysis>();
 
         try {
@@ -57,7 +57,7 @@ public class Analyzer {
 
             for (Instances instances : preprocessed) {
                 String fileName = saveInstancesToFiles(instances, dataset.getTitle());
-                analyzes.add(createAnalysis(dataset, fileName, instances));
+                analyzes.add(createAnalysis(dataset, task, fileName, instances));
             }
 
             informUserByEmailAboutPreprocessingResults(dataset.getUser().getEmail(), dataset);
@@ -68,11 +68,11 @@ public class Analyzer {
         return analyzes;
     }
 
-    public Analysis createAnalysis(Dataset dataset, String dataFileName, Instances instances) {
+    public Analysis createAnalysis(Dataset dataset, String task, String dataFileName, Instances instances) {
         String dataType = getDataTypeForData(instances);
 
         int numberOfAttributes = instances.numAttributes();
-        Analysis analysis = new Analysis(dataset, dataFileName, dataType, numberOfAttributes);
+        Analysis analysis = new Analysis(dataset, task, dataFileName, dataType, numberOfAttributes);
         long analysisId = databaseManager.saveAnalysis(analysis);
         analysis.setId(analysisId);
 

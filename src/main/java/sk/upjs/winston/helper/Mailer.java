@@ -13,7 +13,8 @@ import java.util.Properties;
  * Created by stefan on 2/17/15.
  */
 public class Mailer {
-    public static final String WEB_SERVER_URL = "http://localhost:8080";
+//    public static final String WEB_SERVER_URL = "http://localhost:8080";
+    public static final String WEB_SERVER_URL = "http://158.197.29.209:8080";
     private static final String username = "winston.data.mining@gmail.com";
     private static final String password = "dataminingkosice";
 

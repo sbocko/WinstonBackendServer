@@ -99,7 +99,9 @@ public class RequestProcessor implements Runnable {
         DatabaseManager databaseManager = new DatabaseManager();
 
         Dataset toPreprocess = databaseManager.getDataset(datasetId);
-        System.out.println("PREPROCESSING: " + toPreprocess);
+        String task = dataInput.readUTF();
+
+        System.out.println("PREPROCESSING: " + toPreprocess + ", TASK: " + task);
 
         long targetAttributeId = dataInput.readLong();
         Attribute target = databaseManager.getAttribute(targetAttributeId);
@@ -124,10 +126,27 @@ public class RequestProcessor implements Runnable {
         System.out.println("file received");
 
         Analyzer analyzer = new Analyzer();
-        analyzer.generateDefaultAnalysis(toPreprocess, dataFile, attributesToSplit, target);
-        sendResponseCode(RETURN_CODE_OK);
 
-        analyzer.generateAnalyzes(toPreprocess, dataFile, attributesToSplit, target);
+        if (task.equals(Analysis.TASK_CLASSIFICATION)) {
+            analyzer.generateDefaultAnalysis(toPreprocess, task, dataFile, attributesToSplit, target);
+            sendResponseCode(RETURN_CODE_OK);
+
+            analyzer.generateAnalyzes(toPreprocess, task, dataFile, attributesToSplit, target);
+        } else if (task.equals(Analysis.TASK_REGRESSION)) {
+            System.out.println("REGRESSION WILL BE APPLIED");
+
+            sendResponseCode(RETURN_CODE_OK);
+
+        } else if (task.equals(Analysis.TASK_PATTERN_MINING)) {
+            System.out.println("PATTERN MINING WILL BE APPLIED");
+
+            sendResponseCode(RETURN_CODE_OK);
+
+        } else {
+            System.out.println("UNKNOWN TASK");
+            sendResponseCode(RETURN_CODE_ERR);
+            return;
+        }
     }
 
     private File receiveDataFile(String filename) throws IOException {

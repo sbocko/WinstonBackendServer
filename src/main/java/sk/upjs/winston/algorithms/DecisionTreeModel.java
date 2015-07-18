@@ -47,7 +47,6 @@ public class DecisionTreeModel extends Model {
             evaluation = new Evaluation(dataInstances);
             evaluation.crossValidateModel(j48, dataInstances, 10, new Random(1));
         } catch (Exception e) {
-//            e.printStackTrace()
             return null;
         }
         return evaluation;

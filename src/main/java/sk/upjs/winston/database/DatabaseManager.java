@@ -90,19 +90,20 @@ public class DatabaseManager {
         Statement statement = null;
         try {
             statement = conn.createStatement();
-            String query = "SELECT id, dataset_id, data_file, data_type, number_of_attributes, analyzed_by_grid_search, grid_search_analysis_in_progress FROM " + TABLE_ANALYSIS + " WHERE id = " + analysisId + ";";
+            String query = "SELECT id, dataset_id, task, data_file, data_type, number_of_attributes, analyzed_by_grid_search, grid_search_analysis_in_progress FROM " + TABLE_ANALYSIS + " WHERE id = " + analysisId + ";";
             ResultSet rs = statement.executeQuery(query);
 
             // Extract data from result set
             if (rs.next()) {
                 //Retrieve by column name
                 Dataset dataset = getDataset(rs.getLong("dataset_id"));
+                String task = rs.getString("task");
                 String dataFile = rs.getString("data_file");
                 String dataType = rs.getString("data_type");
                 int numberOfAttributes = rs.getInt("number_of_attributes");
                 boolean analyzedByGridSearch = rs.getBoolean("analyzed_by_grid_search");
                 boolean gridSearchAnalysisInProgress = rs.getBoolean("grid_search_analysis_in_progress");
-                result = new Analysis(analysisId, dataset, dataFile, dataType, numberOfAttributes, analyzedByGridSearch, gridSearchAnalysisInProgress);
+                result = new Analysis(analysisId, dataset, task, dataFile, dataType, numberOfAttributes, analyzedByGridSearch, gridSearchAnalysisInProgress);
             }
 
             rs.close();
@@ -544,7 +545,7 @@ public class DatabaseManager {
         try {
             statement = conn.createStatement();
 
-            String query = "SELECT id, dataset_id, data_file, data_type, number_of_attributes, grid_search_analysis_in_progress FROM " + TABLE_ANALYSIS + " WHERE analyzed_by_grid_search = 1;";
+            String query = "SELECT id, dataset_id, task, data_file, data_type, number_of_attributes, grid_search_analysis_in_progress FROM " + TABLE_ANALYSIS + " WHERE analyzed_by_grid_search = 1;";
             ResultSet rs = statement.executeQuery(query);
 
             // Extract data from result set
@@ -553,12 +554,13 @@ public class DatabaseManager {
                 long id = rs.getLong("id");
                 long datasetId = rs.getLong("dataset_id");
                 Dataset dataset = getDataset(datasetId);
+                String task = rs.getString("task");
                 String dataFile = rs.getString("data_file");
                 String dataType = rs.getString("data_type");
                 int numberOfAttributes = rs.getInt("number_of_attributes");
                 boolean gridSearchAnalysisInProgress = rs.getBoolean("grid_search_analysis_in_progress");
 
-                Analysis analyzed = new Analysis(id, dataset, dataFile, dataType, numberOfAttributes, true, gridSearchAnalysisInProgress);
+                Analysis analyzed = new Analysis(id, dataset, task, dataFile, dataType, numberOfAttributes, true, gridSearchAnalysisInProgress);
                 analyzedByGridSearch.add(analyzed);
             }
 
@@ -597,8 +599,8 @@ public class DatabaseManager {
             int gridSearchAnalysisInProgress = analysis.isGridSearchAnalysisInProgress() ? 1 : 0;
 
             String insertQuery = "INSERT INTO " + TABLE_ANALYSIS
-                    + "(dataset_id, data_file, data_type, number_of_attributes, analyzed_by_grid_search, grid_search_analysis_in_progress, version) " + "VALUES"
-                    + " (" + analysis.getDataset().getId() + ",'" + analysis.getDataFile() + "','" + analysis.getDataType() + "', " + analysis.getNumberOfAttributes() + ", "
+                    + "(dataset_id, task, data_file, data_type, number_of_attributes, analyzed_by_grid_search, grid_search_analysis_in_progress, version) " + "VALUES"
+                    + " (" + analysis.getDataset().getId() + ",'" + analysis.getTask() +"','" + analysis.getDataFile() + "','" + analysis.getDataType() + "', " + analysis.getNumberOfAttributes() + ", "
                     + analyzedByGridSearch + ", " + gridSearchAnalysisInProgress + ", " + DATA_VERSION + ")";
 //            System.out.println("QUERY: " + insertQuery);
 

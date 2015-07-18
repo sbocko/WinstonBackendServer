@@ -1,5 +1,8 @@
 package sk.upjs.winston.server;
 
+import sk.upjs.winston.database.DatabaseManager;
+import sk.upjs.winston.model.Dataset;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -10,8 +13,11 @@ public class Main {
 
 
     public static void main(String[] args) throws IOException {
+        System.out.println("STARTING SERVER..");
         assignPortNumber(args);
         ServerSocket server = createServerSocket(portNumber);
+
+        System.out.println("DONE");
         while (true) {
             acceptRequest(server);
         }

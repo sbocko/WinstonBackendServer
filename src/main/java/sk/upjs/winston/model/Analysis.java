@@ -12,8 +12,13 @@ public class Analysis {
     public static final String DATA_TYPE_CATEGORICAL = "CAT";
     public static final String DATA_TYPE_MULTIVARIATE = "MULT";
 
+    public static final String TASK_CLASSIFICATION = "CLASSIFICATION";
+    public static final String TASK_REGRESSION = "REGRESSION";
+    public static final String TASK_PATTERN_MINING = "PATTERN_MINING";
+
     private long id;
     private Dataset dataset;
+    private String task;
     private String dataFile;
     private String dataType;
     private int numberOfAttributes;
@@ -21,16 +26,18 @@ public class Analysis {
     private boolean gridSearchAnalysisInProgress = false;
 //    private List<AnalysisResult> results = new ArrayList<AnalysisResult>();
 
-    public Analysis(Dataset dataset, String dataFile, String dataType, int numberOfAttributes) {
+    public Analysis(Dataset dataset, String task, String dataFile, String dataType, int numberOfAttributes) {
         this.dataset = dataset;
+        this.task = task;
         this.dataFile = dataFile;
         this.dataType = dataType;
         this.numberOfAttributes = numberOfAttributes;
     }
 
-    public Analysis(long id, Dataset dataset, String dataFile, String dataType, int numberOfAttributes, boolean analyzedByGridSearch, boolean gridSearchAnalysisInProgress) {
+    public Analysis(long id, Dataset dataset, String task, String dataFile, String dataType, int numberOfAttributes, boolean analyzedByGridSearch, boolean gridSearchAnalysisInProgress) {
         this.id = id;
         this.dataset = dataset;
+        this.task = task;
         this.dataFile = dataFile;
         this.dataType = dataType;
         this.numberOfAttributes = numberOfAttributes;
@@ -64,6 +71,14 @@ public class Analysis {
 
     public void setDataset(Dataset dataset) {
         this.dataset = dataset;
+    }
+
+    public String getTask() {
+        return task;
+    }
+
+    public void setTask(String task) {
+        this.task = task;
     }
 
     public String getDataFile() {
@@ -110,7 +125,8 @@ public class Analysis {
     public String toString() {
         return "Analysis{" +
                 "id=" + id +
-                ", dataset=" + dataset.getTitle() +
+                ", dataset=" + dataset +
+                ", task='" + task + '\'' +
                 ", dataFile='" + dataFile + '\'' +
                 ", dataType='" + dataType + '\'' +
                 ", numberOfAttributes=" + numberOfAttributes +
