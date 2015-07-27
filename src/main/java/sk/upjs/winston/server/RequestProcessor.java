@@ -1,7 +1,6 @@
 package sk.upjs.winston.server;
 
-import sk.upjs.winston.computation.Analyzer;
-import sk.upjs.winston.computation.Modelling;
+import sk.upjs.winston.computation.*;
 import sk.upjs.winston.database.DatabaseManager;
 import sk.upjs.winston.helper.FileManipulationUtilities;
 import sk.upjs.winston.model.Analysis;
@@ -88,8 +87,19 @@ public class RequestProcessor implements Runnable {
         Analysis toAnalyze = databaseManager.getAnalysis(analysisId);
         System.out.println("GRID SEARCH FOR: " + toAnalyze);
 
-        Modelling modelling = new Modelling();
-        modelling.performGridsearchAnalysisForFile(toAnalyze);
+        String task = toAnalyze.getTask();
+        Modeling modeling;
+        if (Analysis.TASK_CLASSIFICATION.equals(task)) {
+            modeling = new ClassificationModeling();
+        } else if (Analysis.TASK_REGRESSION.equals(task)) {
+            modeling = new RegressionModeling();
+        } else if (Analysis.TASK_PATTERN_MINING.equals(task)) {
+            modeling = new PatternMiningModeling();
+        } else {
+            sendResponseCode(RETURN_CODE_ERR);
+            return;
+        }
+        modeling.performGridsearchAnalysisForFile(toAnalyze);
 
         sendResponseCode(RETURN_CODE_OK);
     }
@@ -127,26 +137,17 @@ public class RequestProcessor implements Runnable {
 
         Analyzer analyzer = new Analyzer();
 
-        if (task.equals(Analysis.TASK_CLASSIFICATION)) {
+        if (task.equals(Analysis.TASK_CLASSIFICATION) || task.equals(Analysis.TASK_REGRESSION) || task.equals(Analysis.TASK_PATTERN_MINING)) {
+            System.out.println("DETECTED TASK: " + task);
             analyzer.generateDefaultAnalysis(toPreprocess, task, dataFile, attributesToSplit, target);
             sendResponseCode(RETURN_CODE_OK);
 
             analyzer.generateAnalyzes(toPreprocess, task, dataFile, attributesToSplit, target);
-        } else if (task.equals(Analysis.TASK_REGRESSION)) {
-            System.out.println("REGRESSION WILL BE APPLIED");
-
-            sendResponseCode(RETURN_CODE_OK);
-
-        } else if (task.equals(Analysis.TASK_PATTERN_MINING)) {
-            System.out.println("PATTERN MINING WILL BE APPLIED");
-
-            sendResponseCode(RETURN_CODE_OK);
-
-        } else {
-            System.out.println("UNKNOWN TASK");
-            sendResponseCode(RETURN_CODE_ERR);
             return;
         }
+
+        System.out.println("UNKNOWN TASK");
+        sendResponseCode(RETURN_CODE_ERR);
     }
 
     private File receiveDataFile(String filename) throws IOException {

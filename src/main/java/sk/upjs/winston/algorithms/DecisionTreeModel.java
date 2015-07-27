@@ -68,7 +68,7 @@ public class DecisionTreeModel extends Model {
 
         for (float c = PRUNING_CONFIDENCE_MIN; c <= PRUNING_CONFIDENCE_MAX; c += PRUNING_CONFIDENCE_STEP) {
             //first 5 values with step of 1
-            //from 5..1000 (MIN_NUMBER_OF_INSTANCES_PER_LEAF_MAX_SEARCH_VALUE) with step of 5 (MIN_NUMBER_OF_INSTANCES_PER_LEAF_STEP)
+            //from 5..1000 (MIN_NUMBER_OF_INSTANCES_PER_LEAF_MAX) with step of 5 (MIN_NUMBER_OF_INSTANCES_PER_LEAF_STEP)
             for (int m = MIN_NUMBER_OF_INSTANCES_PER_LEAF_MIN_SEARCH_VALUE; m < MIN_NUMBER_OF_INSTANCES_PER_LEAF_MAX_SEARCH_VALUE; m += getNextStepForMinimumNumberOfInstancesPerLeaf(m)) {
                 //both pruned and unpruned results
                 for (boolean unpruned = false; !unpruned; unpruned = true) {

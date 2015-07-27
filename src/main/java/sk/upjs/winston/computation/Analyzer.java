@@ -26,7 +26,6 @@ public class Analyzer {
     private static final String DOES_NOT_CONTAIN_ATTRIBUTE_VALUE = "0";
 
     private Preprocessing preprocessing = new Preprocessing();
-    private Modelling modelling = new Modelling();
     private MissingValuesHandler missingValuesHandler = new MissingValuesHandler();
     private DatabaseManager databaseManager = new DatabaseManager();
 
@@ -38,7 +37,7 @@ public class Analyzer {
             original = binarizeDataInstances(dataset, original, attributesToSplit);
             String fileName = saveInstancesToFiles(original, dataset.getTitle());
             createAnalysis(dataset, task, fileName, original);
-        }catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -77,9 +76,20 @@ public class Analyzer {
         analysis.setId(analysisId);
 
         try {
-            modelling.performAnalysisWithDefaultHyperparameters(analysis);
-            modelling.performRecommendedDataMiningMethodForAnalysis(analysis);
-        }catch (IOException e){
+            Modeling modeling;
+            if (Analysis.TASK_CLASSIFICATION.equals(task)) {
+                modeling = new ClassificationModeling();
+            } else if (Analysis.TASK_REGRESSION.equals(task)) {
+                modeling = new RegressionModeling();
+            } else if (Analysis.TASK_PATTERN_MINING.equals(task)) {
+                modeling = new PatternMiningModeling();
+            } else {
+                return null;
+            }
+
+            modeling.performAnalysisWithDefaultHyperparameters(analysis);
+            modeling.performRecommendedDataMiningMethodForAnalysis(analysis);
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -92,7 +102,7 @@ public class Analyzer {
      * HELPER METHODS
      */
 
-    private List<Instances> generatePreprocessedDataInstances(Dataset dataset, List<Instances> toProcess, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
+    protected List<Instances> generatePreprocessedDataInstances(Dataset dataset, List<Instances> toProcess, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
 //        if(1==1)return toProcess;
         for (Attribute datasetAttribute : dataset.getAttributes()) {
             if (attributesToSplit.get(datasetAttribute)) {
@@ -129,7 +139,7 @@ public class Analyzer {
 //        return toProcess
     }
 
-    private void addStringAttributesToBinarization(Map<Attribute, Boolean> attributesToSplit, int targetAttributePosition) {
+    protected void addStringAttributesToBinarization(Map<Attribute, Boolean> attributesToSplit, int targetAttributePosition) {
         for (Map.Entry<Attribute, Boolean> entry : attributesToSplit.entrySet()) {
             Attribute actual = entry.getKey();
             if (actual.getPositionInDataFile() != targetAttributePosition && actual instanceof StringAttribute) {
@@ -138,7 +148,7 @@ public class Analyzer {
         }
     }
 
-    private List<Instances> generateBinarizedDataInstances(Dataset dataset, List<Instances> toBinarize, Map<Attribute, Boolean> attributesToSplit) {
+    protected List<Instances> generateBinarizedDataInstances(Dataset dataset, List<Instances> toBinarize, Map<Attribute, Boolean> attributesToSplit) {
         List<Instances> binarized = new ArrayList<Instances>();
         for (Instances actual : toBinarize) {
             binarized.add(binarizeDataInstances(dataset, actual, attributesToSplit));
@@ -146,11 +156,11 @@ public class Analyzer {
         return binarized;
     }
 
-    private Instances binarizeDataInstances(Dataset dataset, Instances toBinarize, Map<Attribute, Boolean> attributesToSplit) {
+    protected Instances binarizeDataInstances(Dataset dataset, Instances toBinarize, Map<Attribute, Boolean> attributesToSplit) {
         return preprocessing.binarize(dataset, toBinarize, attributesToSplit);
     }
 
-    private String saveInstancesToFiles(Instances toSave, String datasetTitle) {
+    protected String saveInstancesToFiles(Instances toSave, String datasetTitle) {
         try {
             File file = generateEmptyFileForDatasetAnalysis(datasetTitle);
             ArffSaver saver = new ArffSaver();
@@ -164,7 +174,7 @@ public class Analyzer {
         return null;
     }
 
-    private File generateEmptyFileForDatasetAnalysis(String datasetTitle) throws IOException {
+    protected File generateEmptyFileForDatasetAnalysis(String datasetTitle) throws IOException {
         int analysisNumber = 1;
         File file;
         String filepath;
@@ -181,7 +191,7 @@ public class Analyzer {
         return file;
     }
 
-    private List<Instances> replaceMissingValues(Dataset dataset, File arff) throws IOException {
+    protected List<Instances> replaceMissingValues(Dataset dataset, File arff) throws IOException {
         BufferedReader r = new BufferedReader(
                 new FileReader(arff));
         Instances original = new Instances(r);
@@ -222,12 +232,12 @@ public class Analyzer {
         return replaced;
     }
 
-    private Instances makeClone(Instances source) {
+    protected Instances makeClone(Instances source) {
         Instances destination = new Instances(source);
         return destination;
     }
 
-    private String getDataTypeForData(Instances instances) {
+    protected String getDataTypeForData(Instances instances) {
         boolean wasInt = false;
         boolean wasReal = false;
         boolean wasCategorical = false;
@@ -264,7 +274,7 @@ public class Analyzer {
         }
     }
 
-    private String saveDataToFile(List<String[]> data, String datasetTitle) throws IOException {
+    protected String saveDataToFile(List<String[]> data, String datasetTitle) throws IOException {
         File file = generateEmptyFileForDatasetAnalysis(datasetTitle);
 
         for (int i = 0; i < data.get(0).length; i++) {
@@ -284,7 +294,7 @@ public class Analyzer {
         return file.getName();
     }
 
-    private List<String[]> splitAttributes(String[][] datasetAttributesData, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
+    protected List<String[]> splitAttributes(String[][] datasetAttributesData, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
         List<String[]> result = new ArrayList<String[]>();
 
         for (int i = 0; i < datasetAttributesData.length; i++) {
@@ -307,7 +317,7 @@ public class Analyzer {
      *  @param splitAttribute null if this attribute should not be devided
      */
 
-    private List<String[]> getNewAttributeData(String[] attributeData, Attribute splitAttribute, boolean split) {
+    protected List<String[]> getNewAttributeData(String[] attributeData, Attribute splitAttribute, boolean split) {
         List<String[]> result = new ArrayList<String[]>();
 
         if (!split) {
@@ -335,7 +345,7 @@ public class Analyzer {
         return result;
     }
 
-    private String[] addAttributeTitleToData(String[] data, String title) {
+    protected String[] addAttributeTitleToData(String[] data, String title) {
         String[] result = new String[data.length + 1];
         result[0] = title;
         for (int i = 1; i < result.length; i++) {
@@ -344,7 +354,7 @@ public class Analyzer {
         return result;
     }
 
-    private String[] initializeArrayWithValue(int length, String value) {
+    protected String[] initializeArrayWithValue(int length, String value) {
         String[] array = new String[length];
         for (int i = 0; i < array.length; i++) {
             array[i] = value;
@@ -352,7 +362,7 @@ public class Analyzer {
         return array;
     }
 
-    private void informUserByEmailAboutPreprocessingResults(String email, Dataset dataset) {
+    protected void informUserByEmailAboutPreprocessingResults(String email, Dataset dataset) {
         System.out.println("preparing to send email");
         String subject = "Winston - preprocessing finished: " + dataset.getTitle();
         String body = "Hello,\n\n we processed your dataset in many ways and performed basic analyzes. The results are waiting for you at\n\n" + Mailer.WEB_SERVER_URL + "/winston/dataset/show/" + dataset.getId() + "\n\nThank you!";

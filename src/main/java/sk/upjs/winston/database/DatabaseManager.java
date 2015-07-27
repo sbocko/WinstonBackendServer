@@ -1,11 +1,11 @@
 package sk.upjs.winston.database;
 
-import sk.upjs.winston.algorithms.DecisionTreeModel;
-import sk.upjs.winston.algorithms.KnnModel;
-import sk.upjs.winston.algorithms.LogisticRegressionModel;
-import sk.upjs.winston.algorithms.SvmModel;
+import sk.upjs.winston.algorithms.*;
+import sk.upjs.winston.computation.RegressionModeling;
 import sk.upjs.winston.model.*;
 
+import javax.management.RuntimeErrorException;
+import javax.xml.crypto.dsig.keyinfo.RetrievalMethod;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +30,21 @@ public class DatabaseManager {
     public static final String CLASS_WINSTON_LOGISTIC_REGRESSION_RESULT = "winston.LogisticRegressionResult";
     public static final String CLASS_WINSTON_DECISION_TREE_RESULT = "winston.DecisionTreeResult";
     public static final String CLASS_WINSTON_SVM_RESULT = "winston.SvmResult";
+    public static final String CLASS_WINSTON_LINEAR_REGRESSION_RESULT = "winston.LinearRegressionResult";
+    public static final String CLASS_WINSTON_REGRESSION_TREE_RESULT = "winston.RegressionTreeResult";
+    public static final String CLASS_WINSTON_APRIORI_RESULT = "winston.AprioriResult";
+    public static final String CLASS_WINSTON_SIMPLE_K_MEANS_RESULT = "winston.SimpleKMeansResult";
+    private static final String CLASS_WINSTON_LINEAR_REGRESSION = "winston.LinearRegressionResult";
+    private static final String CLASS_WINSTON_REGRESSION_TREE = "winston.RegressionTreeResult";
+    private static final String CLASS_WINSTON_APRIORI = "winston.AprioriResult";
+    private static final String CLASS_WINSTON_SIMPLE_K_MEANS = "winston.SimpleKMeansResult";
+
     public static final int COLUMN_INDEX = 1;
     public static final int DATA_VERSION = 1;
+    public static final String DB_TASK_CLASSIFICATION = "CLASSIFICATION";
+    public static final String DB_TASK_REGRESSION = "REGRESSION";
+    public static final String DB_TASK_PATTERN_MINING = "PATTERN_MINING";
+
 
     public Dataset getDataset(long datasetId) {
         Dataset result = null;
@@ -239,13 +252,14 @@ public class DatabaseManager {
         PreparedStatement update = null;
 
         try {
-            update = conn.prepareStatement("UPDATE " + TABLE_ANALYSIS + " SET dataset_id = ?, data_file = ?, number_of_attributes = ?, analyzed_by_grid_search = ?, grid_search_analysis_in_progress = ? WHERE id = ?");
+            update = conn.prepareStatement("UPDATE " + TABLE_ANALYSIS + " SET dataset_id = ?, data_file = ?, number_of_attributes = ?, analyzed_by_grid_search = ?, grid_search_analysis_in_progress = ?, task = ? WHERE id = ?");
             update.setLong(1, analysis.getDataset().getId());
             update.setString(2, analysis.getDataFile());
             update.setInt(3, analysis.getNumberOfAttributes());
             update.setBoolean(4, analysis.isAnalyzedByGridSearch());
             update.setBoolean(5, analysis.isGridSearchAnalysisInProgress());
-            update.setLong(6, analysis.getId());
+            update.setString(6, analysis.getTask());
+            update.setLong(7, analysis.getId());
 
             update.executeUpdate();
 
@@ -470,6 +484,104 @@ public class DatabaseManager {
         return result;
     }
 
+    public AnalysisResult defaultLinearRegressionResultForAnalysis(Analysis analysis) {
+        AnalysisResult result = null;
+
+        Connection conn = DatabaseConnectionFactory.getConnection();
+        Statement statement = null;
+        try {
+            statement = conn.createStatement();
+            String query = "SELECT rmse, mean_absolute_error, correctly_classified, incorrectly_classified, summary FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId()
+                    + " and class = '" + CLASS_WINSTON_LINEAR_REGRESSION_RESULT + "' and ridge = "
+                    + LinearRegressionModel.DEFAULT_LINEAR_REGRESSION_PARAMETER_RIDGE + ";";
+            ResultSet rs = statement.executeQuery(query);
+
+            // Extract data from result set
+            if (rs.next()) {
+                //Retrieve by column name
+                double rmse = rs.getDouble("rmse");
+                double meanAbsoluteError = rs.getDouble("mean_absolute_error");
+                int correct = rs.getInt("correctly_classified");
+                int incorrect = rs.getInt("incorrectly_classified");
+                String summary = rs.getString("summary");
+                result = new LinearRegressionResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, LinearRegressionModel.DEFAULT_LINEAR_REGRESSION_PARAMETER_RIDGE);
+            }
+
+            rs.close();
+            statement.close();
+            conn.close();
+            return result;
+        } catch (SQLException se) {
+            //Handle errors for JDBC
+            se.printStackTrace();
+        } finally {
+            //finally block used to close resources
+            try {
+                if (statement != null)
+                    statement.close();
+            } catch (SQLException se2) {
+                // nothing we can do
+            }
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException se) {
+                se.printStackTrace();
+            }//end finally try
+        }//end try
+        return result;
+    }
+
+    public AnalysisResult defaultRegressionTreeResultForAnalysis(Analysis analysis) {
+        AnalysisResult result = null;
+
+        Connection conn = DatabaseConnectionFactory.getConnection();
+        Statement statement = null;
+        try {
+            statement = conn.createStatement();
+            String query = "SELECT rmse, mean_absolute_error, correctly_classified, incorrectly_classified, summary FROM " + TABLE_ANALYSIS_RESULT + " WHERE analysis_id = " + analysis.getId()
+                    + " and class = '" + CLASS_WINSTON_REGRESSION_TREE_RESULT + "' and minimum_number_of_instances_per_leaf = "
+                    + RegressionTreeModel.DEFAULT_REGRESSION_TREE_PARAMETER_MIN_NUMBER_OF_INSTANCES + " and minimum_variance_for_split = "
+                    + RegressionTreeModel.DEFAULT_REGRESSION_TREE_MIN_VARIANCE_FOR_SPLIT + " and number_of_folds = "
+                    + RegressionTreeModel.DEFAULT_REGRESSION_NUMBER_OF_FOLDS + ";";
+            ResultSet rs = statement.executeQuery(query);
+
+            // Extract data from result set
+            if (rs.next()) {
+                //Retrieve by column name
+                double rmse = rs.getDouble("rmse");
+                double meanAbsoluteError = rs.getDouble("mean_absolute_error");
+                int correct = rs.getInt("correctly_classified");
+                int incorrect = rs.getInt("incorrectly_classified");
+                String summary = rs.getString("summary");
+                result = new RegressionTreeResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, RegressionTreeModel.DEFAULT_REGRESSION_TREE_PARAMETER_MIN_NUMBER_OF_INSTANCES, RegressionTreeModel.DEFAULT_REGRESSION_TREE_MIN_VARIANCE_FOR_SPLIT, RegressionTreeModel.DEFAULT_REGRESSION_NUMBER_OF_FOLDS);
+            }
+
+            rs.close();
+            statement.close();
+            conn.close();
+            return result;
+        } catch (SQLException se) {
+            //Handle errors for JDBC
+            se.printStackTrace();
+        } finally {
+            //finally block used to close resources
+            try {
+                if (statement != null)
+                    statement.close();
+            } catch (SQLException se2) {
+                // nothing we can do
+            }
+            try {
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException se) {
+                se.printStackTrace();
+            }//end finally try
+        }//end try
+        return result;
+    }
+
     public AnalysisResult bestMethodForAnalysis(Analysis analysis) {
         AnalysisResult result = null;
 
@@ -493,22 +605,21 @@ public class DatabaseManager {
                 String summary = rs.getString("summary");
 
                 if (CLASS_WINSTON_KNN_RESULT.equals(resultClass)) {
-                    int k = rs.getInt("k");
-                    result = new KnnResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, k);
+                    result = parseKnnResultFromResultSet(analysis, rs, rmse, meanAbsoluteError, correct, incorrect, summary);
                 } else if (CLASS_WINSTON_LOGISTIC_REGRESSION_RESULT.equals(resultClass)) {
-                    double ridge = rs.getDouble("ridge");
-                    int maximumNumberOfIterations = rs.getInt("maximum_number_of_iterations");
-                    result = new LogisticRegressionResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, ridge, maximumNumberOfIterations);
+                    result = parseLogisticRegressionResultFromResultSet(analysis, rs, rmse, meanAbsoluteError, correct, incorrect, summary);
                 } else if (CLASS_WINSTON_DECISION_TREE_RESULT.equals(resultClass)) {
-                    double confidenceFactor = rs.getDouble("confidence_factor");
-                    int minimumNumberOfInstancesPerLeaf = rs.getInt("minimum_number_of_instances_per_leaf");
-                    boolean unpruned = rs.getBoolean("unpruned");
-                    result = new DecisionTreeResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, confidenceFactor, minimumNumberOfInstancesPerLeaf, unpruned);
+                    result = parseDecisionTreeResultFromResultSet(analysis, rs, rmse, meanAbsoluteError, correct, incorrect, summary);
                 } else if (CLASS_WINSTON_SVM_RESULT.equals(resultClass)) {
-                    String kernel = rs.getString("kernel");
-                    double complexityConstant = rs.getDouble("complexity_constant");
-                    double gamma = rs.getDouble("gamma");
-                    result = new SvmResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, kernel, complexityConstant, gamma);
+                    result = parseSvmResultFromResultSet(analysis, rs, rmse, meanAbsoluteError, correct, incorrect, summary);
+                } else if (CLASS_WINSTON_LINEAR_REGRESSION.equals(resultClass)) {
+                    result = parseLinearRegressionResultFromResultSet(analysis, rs, rmse, meanAbsoluteError, correct, incorrect, summary);
+                } else if (CLASS_WINSTON_REGRESSION_TREE.equals(resultClass)) {
+                    result = parseRegressionTreeResultFromResultSet(analysis, rs, rmse, meanAbsoluteError, correct, incorrect, summary);
+                } else if (CLASS_WINSTON_APRIORI.equals(resultClass)) {
+                    result = parseAprioriResultFromResultSet(analysis, rs, rmse, meanAbsoluteError, correct, incorrect, summary);
+                } else if (CLASS_WINSTON_SIMPLE_K_MEANS.equals(resultClass)) {
+                    result = parseSimpleKMeansResultFromResultSet(analysis, rs, rmse, meanAbsoluteError, correct, incorrect, summary);
                 }
             }
 
@@ -537,7 +648,7 @@ public class DatabaseManager {
         return result;
     }
 
-    public List<Analysis> analysesAnalyzedByGridSearch() {
+    public List<Analysis> analysesAnalyzedByGridSearchForTask(String taskType) {
         List<Analysis> analyzedByGridSearch = new ArrayList<Analysis>();
 
         Connection conn = DatabaseConnectionFactory.getConnection();
@@ -545,7 +656,9 @@ public class DatabaseManager {
         try {
             statement = conn.createStatement();
 
-            String query = "SELECT id, dataset_id, task, data_file, data_type, number_of_attributes, grid_search_analysis_in_progress FROM " + TABLE_ANALYSIS + " WHERE analyzed_by_grid_search = 1;";
+            String task = getDbTaskStringForTask(taskType);
+
+            String query = "SELECT id, dataset_id, task, data_file, data_type, number_of_attributes, grid_search_analysis_in_progress FROM " + TABLE_ANALYSIS + " WHERE analyzed_by_grid_search = 1 AND task = '" + task + "';";
             ResultSet rs = statement.executeQuery(query);
 
             // Extract data from result set
@@ -554,7 +667,6 @@ public class DatabaseManager {
                 long id = rs.getLong("id");
                 long datasetId = rs.getLong("dataset_id");
                 Dataset dataset = getDataset(datasetId);
-                String task = rs.getString("task");
                 String dataFile = rs.getString("data_file");
                 String dataType = rs.getString("data_type");
                 int numberOfAttributes = rs.getInt("number_of_attributes");
@@ -600,7 +712,7 @@ public class DatabaseManager {
 
             String insertQuery = "INSERT INTO " + TABLE_ANALYSIS
                     + "(dataset_id, task, data_file, data_type, number_of_attributes, analyzed_by_grid_search, grid_search_analysis_in_progress, version) " + "VALUES"
-                    + " (" + analysis.getDataset().getId() + ",'" + analysis.getTask() +"','" + analysis.getDataFile() + "','" + analysis.getDataType() + "', " + analysis.getNumberOfAttributes() + ", "
+                    + " (" + analysis.getDataset().getId() + ",'" + analysis.getTask() + "','" + analysis.getDataFile() + "','" + analysis.getDataType() + "', " + analysis.getNumberOfAttributes() + ", "
                     + analyzedByGridSearch + ", " + gridSearchAnalysisInProgress + ", " + DATA_VERSION + ")";
 //            System.out.println("QUERY: " + insertQuery);
 
@@ -675,6 +787,38 @@ public class DatabaseManager {
                         + svm.getMeanAbsoluteError() + ", " + svm.getCorrectlyClassified() + ", " + svm.getIncorrectlyClassified() + ",'" + svm.getSummary() + "', '"
                         + svm.getKernel() + "', " + svm.getComplexityConstant() + ", " + svm.getGamma() + ",'"
                         + CLASS_WINSTON_SVM_RESULT + "', " + DATA_VERSION + ")";
+            } else if (toSave instanceof LinearRegressionResult) {
+                LinearRegressionResult linearRegression = (LinearRegressionResult) toSave;
+                insertQuery = "INSERT INTO " + TABLE_ANALYSIS_RESULT
+                        + "(analysis_id, rmse,  mean_absolute_error, correctly_classified, incorrectly_classified, summary, ridge, class, version) " + "VALUES"
+                        + " (" + linearRegression.getAnalysis_id() + ", " + linearRegression.getRmse() + ", "
+                        + linearRegression.getMeanAbsoluteError() + ", " + linearRegression.getCorrectlyClassified() + ", " + linearRegression.getIncorrectlyClassified() + ",'" + linearRegression.getSummary() + "', "
+                        + linearRegression.getRidge() + ",'"
+                        + CLASS_WINSTON_LINEAR_REGRESSION_RESULT + "', " + DATA_VERSION + ")";
+            } else if (toSave instanceof RegressionTreeResult) {
+                RegressionTreeResult regressionTree = (RegressionTreeResult) toSave;
+                insertQuery = "INSERT INTO " + TABLE_ANALYSIS_RESULT
+                        + "(analysis_id, rmse,  mean_absolute_error, correctly_classified, incorrectly_classified, summary, minimum_number_of_instances_per_leaf, minimum_variance_for_split, number_of_folds, class, version) " + "VALUES"
+                        + " (" + regressionTree.getAnalysis_id() + ", " + regressionTree.getRmse() + ", "
+                        + regressionTree.getMeanAbsoluteError() + ", " + regressionTree.getCorrectlyClassified() + ", " + regressionTree.getIncorrectlyClassified() + ",'" + regressionTree.getSummary() + "', "
+                        + regressionTree.getMinimumNumberOfInstancesPerLeaf() + ", " + regressionTree.getMinimumVarianceForSplit() + ", " + regressionTree.getNumberOfFolds() + ",'"
+                        + CLASS_WINSTON_REGRESSION_TREE_RESULT + "', " + DATA_VERSION + ")";
+            } else if (toSave instanceof AprioriResult) {
+                AprioriResult apriori = (AprioriResult) toSave;
+                insertQuery = "INSERT INTO " + TABLE_ANALYSIS_RESULT
+                        + "(analysis_id, rmse,  mean_absolute_error, correctly_classified, incorrectly_classified, summary, number_of_rules, class, version) " + "VALUES"
+                        + " (" + apriori.getAnalysis_id() + ", " + apriori.getRmse() + ", "
+                        + apriori.getMeanAbsoluteError() + ", " + apriori.getCorrectlyClassified() + ", " + apriori.getIncorrectlyClassified() + ",'" + apriori.getSummary() + "', "
+                        + apriori.getNumberOfRules() + ",'"
+                        + CLASS_WINSTON_APRIORI_RESULT + "', " + DATA_VERSION + ")";
+            } else if (toSave instanceof SimpleKMeansResult) {
+                SimpleKMeansResult simpleKMeans = (SimpleKMeansResult) toSave;
+                insertQuery = "INSERT INTO " + TABLE_ANALYSIS_RESULT
+                        + "(analysis_id, rmse,  mean_absolute_error, correctly_classified, incorrectly_classified, summary, number_of_clusters, initialization_method, number_of_folds, class, version) " + "VALUES"
+                        + " (" + simpleKMeans.getAnalysis_id() + ", " + simpleKMeans.getRmse() + ", "
+                        + simpleKMeans.getMeanAbsoluteError() + ", " + simpleKMeans.getCorrectlyClassified() + ", " + simpleKMeans.getIncorrectlyClassified() + ",'" + simpleKMeans.getSummary() + "', '"
+                        + simpleKMeans.getNumberOfClusters() + ", " + simpleKMeans.getInitializationMethod() + ", " + simpleKMeans.getNumberOfFolds() + ",'"
+                        + CLASS_WINSTON_SIMPLE_K_MEANS_RESULT + "', " + DATA_VERSION + ")";
             }
 
             if (insertQuery != null) {
@@ -745,5 +889,66 @@ public class DatabaseManager {
         rs.close();
         statement.close();
         return datasetAttributes;
+    }
+
+    private String getDbTaskStringForTask(String taskType) {
+        if (taskType.equals(Analysis.TASK_CLASSIFICATION)) {
+            return DB_TASK_CLASSIFICATION;
+        } else if (taskType.equals(Analysis.TASK_REGRESSION)) {
+            return DB_TASK_REGRESSION;
+        } else if (taskType.equals(Analysis.TASK_PATTERN_MINING)) {
+            return DB_TASK_PATTERN_MINING;
+        } else {
+            return null;
+        }
+    }
+
+    private AnalysisResult parseKnnResultFromResultSet(Analysis analysis, ResultSet rs, double rmse, double meanAbsoluteError, int correct, int incorrect, String summary) throws SQLException {
+        int k = rs.getInt("k");
+        return new KnnResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, k);
+    }
+
+    private AnalysisResult parseSvmResultFromResultSet(Analysis analysis, ResultSet rs, double rmse, double meanAbsoluteError, int correct, int incorrect, String summary) throws SQLException {
+        String kernel = rs.getString("kernel");
+        double complexityConstant = rs.getDouble("complexity_constant");
+        double gamma = rs.getDouble("gamma");
+        return new SvmResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, kernel, complexityConstant, gamma);
+    }
+
+    private AnalysisResult parseDecisionTreeResultFromResultSet(Analysis analysis, ResultSet rs, double rmse, double meanAbsoluteError, int correct, int incorrect, String summary) throws SQLException {
+        double confidenceFactor = rs.getDouble("confidence_factor");
+        int minimumNumberOfInstancesPerLeaf = rs.getInt("minimum_number_of_instances_per_leaf");
+        boolean unpruned = rs.getBoolean("unpruned");
+        return new DecisionTreeResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, confidenceFactor, minimumNumberOfInstancesPerLeaf, unpruned);
+    }
+
+    private AnalysisResult parseLogisticRegressionResultFromResultSet(Analysis analysis, ResultSet rs, double rmse, double meanAbsoluteError, int correct, int incorrect, String summary) throws SQLException {
+        double ridge = rs.getDouble("ridge");
+        int maximumNumberOfIterations = rs.getInt("maximum_number_of_iterations");
+        return new LogisticRegressionResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, ridge, maximumNumberOfIterations);
+    }
+
+    private AnalysisResult parseLinearRegressionResultFromResultSet(Analysis analysis, ResultSet rs, double rmse, double meanAbsoluteError, int correct, int incorrect, String summary) throws SQLException {
+        double ridge = rs.getDouble("ridge");
+        return new LinearRegressionResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, ridge);
+    }
+
+    private AnalysisResult parseRegressionTreeResultFromResultSet(Analysis analysis, ResultSet rs, double rmse, double meanAbsoluteError, int correct, int incorrect, String summary) throws SQLException {
+        int minimumNumberOfInstancesPerLeaf = rs.getInt("minimum_number_of_instances_per_leaf");
+        double minimumVarianceForSplit = rs.getDouble("minimum_variance_for_split");
+        int numberOfFolds = rs.getInt("number_of_folds");
+        return new RegressionTreeResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, minimumNumberOfInstancesPerLeaf, minimumVarianceForSplit, numberOfFolds);
+    }
+
+    private AnalysisResult parseAprioriResultFromResultSet(Analysis analysis, ResultSet rs, double rmse, double meanAbsoluteError, int correct, int incorrect, String summary) throws SQLException {
+        int numberOfRules = rs.getInt("number_of_rules");
+        return new AprioriResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, numberOfRules);
+    }
+
+    private AnalysisResult parseSimpleKMeansResultFromResultSet(Analysis analysis, ResultSet rs, double rmse, double meanAbsoluteError, int correct, int incorrect, String summary) throws SQLException {
+        int numberOfClusters = rs.getInt("number_of_clusters");
+        int initializationMethod = rs.getInt("initialization_method");
+        int numberOfFolds = rs.getInt("number_of_folds");
+        return new SimpleKMeansResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, numberOfClusters, initializationMethod, numberOfFolds);
     }
 }

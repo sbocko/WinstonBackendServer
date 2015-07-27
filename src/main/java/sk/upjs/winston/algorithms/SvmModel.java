@@ -40,9 +40,10 @@ public class SvmModel extends Model {
      * @param kernel             SVM kernel to use
      * @param complexityConstant -C parameter of SMO algorithm
      * @param gamma              gamma parameter of libsvm
+     * @param isRegression       use regression algorithm if set to true (classification otherwise)
      * @return evaluation
      */
-    public Evaluation svm(Instances dataInstances, String kernel, double complexityConstant, double gamma) {
+    public Evaluation svm(Instances dataInstances, String kernel, double complexityConstant, double gamma, boolean isRegression) {
         PrintStream printStreamOriginal = System.out;
         System.setOut(new PrintStream(new OutputStream() {
             public void write(int b) {
@@ -50,6 +51,10 @@ public class SvmModel extends Model {
         }));
 
         LibSVM svm = new LibSVM();
+        if (isRegression) {
+            // set to regression
+            svm.setSVMType(new SelectedTag(LibSVM.SVMTYPE_EPSILON_SVR, LibSVM.TAGS_SVMTYPE)); // -S 3=epsilon-SVR
+        }
         svm.setCost(complexityConstant);
         svm.setGamma(gamma);
 
@@ -82,14 +87,15 @@ public class SvmModel extends Model {
      *
      * @param analysis      analysis details which belongs to returned search result
      * @param dataInstances dataset instances
+     * @param isRegression  use regression algorithm if set to true (classification otherwise)
      * @return Set of SvmResult instances
      */
-    public Set<AnalysisResult> svmSearch(Analysis analysis, Instances dataInstances) {
+    public Set<AnalysisResult> svmSearch(Analysis analysis, Instances dataInstances, boolean isRegression) {
         Set<AnalysisResult> results = new HashSet<AnalysisResult>();
 
         for (double c = MIN_C; c <= MAX_C; c += STEP_C) {
             for (double g = MIN_G; g <= MAX_G; g *= MULTIPLICATION_STEP_G) {
-                Evaluation trained = svm(dataInstances, SvmResult.KERNEL_RBF_KERNEL, c, g);
+                Evaluation trained = svm(dataInstances, SvmResult.KERNEL_RBF_KERNEL, c, g, isRegression);
                 if (trained != null) {
                     double rmse = trained.rootMeanSquaredError();
                     double meanAbsoluteError = trained.meanAbsoluteError();
@@ -100,7 +106,7 @@ public class SvmModel extends Model {
                     results.add(res);
                 }
 
-                trained = svm(dataInstances, SvmResult.KERNEL_LINEAR_KERNEL, c, g);
+                trained = svm(dataInstances, SvmResult.KERNEL_LINEAR_KERNEL, c, g, isRegression);
                 if (trained != null) {
                     double rmse = trained.rootMeanSquaredError();
                     double meanAbsoluteError = trained.meanAbsoluteError();
@@ -122,14 +128,16 @@ public class SvmModel extends Model {
      *
      * @param dataInstances dataset instances
      * @param analysis      analysis details which belongs to returned search result
+     * @param isRegression       use regression algorithm if set to true (classification otherwise)
      * @return svm search result object
      */
-    public AnalysisResult svmRandomAnalysis(Instances dataInstances, Analysis analysis) {
+
+    public AnalysisResult svmRandomAnalysis(Instances dataInstances, Analysis analysis, boolean isRegression) {
         String kernel = getRandomParameterKernel();
         double complexityConstant = getRandomParameterComplexityConstant(MIN_C, MAX_C * 5);
         double gamma = getRandomParameterGamma(MIN_G, MAX_G);
         if (kernel.equals(SvmResult.KERNEL_RBF_KERNEL)) {
-            Evaluation trained = svm(dataInstances, kernel, complexityConstant, gamma);
+            Evaluation trained = svm(dataInstances, kernel, complexityConstant, gamma, isRegression);
             if (trained != null) {
                 double rmse = trained.rootMeanSquaredError();
                 double meanAbsoluteError = trained.meanAbsoluteError();
@@ -140,7 +148,7 @@ public class SvmModel extends Model {
                 return res;
             }
         } else {
-            Evaluation trained = svm(dataInstances, kernel, complexityConstant, gamma);
+            Evaluation trained = svm(dataInstances, kernel, complexityConstant, gamma, isRegression);
             if (trained != null) {
                 double rmse = trained.rootMeanSquaredError();
                 double meanAbsoluteError = trained.meanAbsoluteError();
