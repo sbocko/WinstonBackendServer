@@ -26,5 +26,8 @@
         <module name="WinstonBackendServer" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="WinstonBackendServer" target="1.5" />
+    </bytecodeTargetLevel>
   </component>
 </project>

@@ -4,6 +4,7 @@ import sk.upjs.winston.model.Analysis;
 import sk.upjs.winston.model.AnalysisResult;
 import sk.upjs.winston.model.SvmResult;
 import weka.classifiers.Evaluation;
+
 import weka.classifiers.functions.LibSVM;
 import weka.core.Instances;
 import weka.core.SelectedTag;

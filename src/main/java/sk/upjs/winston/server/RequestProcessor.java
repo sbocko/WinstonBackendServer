@@ -37,7 +37,6 @@ public class RequestProcessor implements Runnable {
         dataOutput = new DataOutputStream(out);
     }
 
-    @Override
     public void run() {
         try {
             String command = dataInput.readUTF();
@@ -113,23 +112,31 @@ public class RequestProcessor implements Runnable {
 
         System.out.println("PREPROCESSING: " + toPreprocess + ", TASK: " + task);
 
-        long targetAttributeId = dataInput.readLong();
-        Attribute target = databaseManager.getAttribute(targetAttributeId);
-
-        int numberOfAttributesToBinarize = dataInput.readInt();
-        Set<Long> attributeIds = new HashSet<Long>(numberOfAttributesToBinarize);
-        for (int i = 0; i < numberOfAttributesToBinarize; i++) {
-            attributeIds.add(dataInput.readLong());
-        }
+        Attribute target = null;
         Map<Attribute, Boolean> attributesToSplit = new HashMap<Attribute, Boolean>();
-        for (Attribute attribute : toPreprocess.getAttributes()) {
-            if (attributeIds.contains(attribute.getId())) {
-                attributesToSplit.put(attribute, true);
-            } else {
-                attributesToSplit.put(attribute, false);
+
+        if (!Analysis.TASK_PATTERN_MINING.equals(task)) {
+            long targetAttributeId = dataInput.readLong();
+            target = databaseManager.getAttribute(targetAttributeId);
+
+            int numberOfAttributesToBinarize = dataInput.readInt();
+            System.out.println("ATTRS TO BINARIZE: " + numberOfAttributesToBinarize);
+            Set<Long> attributeIds = new HashSet<Long>(numberOfAttributesToBinarize);
+            for (int i = 0; i < numberOfAttributesToBinarize; i++) {
+                System.out.println("ATTRIBUTE IDS: " + attributeIds);
+                attributeIds.add(dataInput.readLong());
             }
+            attributesToSplit = new HashMap<Attribute, Boolean>();
+            for (Attribute attribute : toPreprocess.getAttributes()) {
+                if (attributeIds.contains(attribute.getId())) {
+                    attributesToSplit.put(attribute, true);
+                } else {
+                    attributesToSplit.put(attribute, false);
+                }
+            }
+            System.out.println(attributesToSplit);
         }
-        System.out.println(attributesToSplit);
+
 
         File dataFile = receiveDataFile(toPreprocess.getArffDataFile());
 

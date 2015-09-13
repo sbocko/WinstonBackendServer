@@ -11,13 +11,15 @@ public class SimpleKMeansResult extends AnalysisResult {
 
     private int numberOfClusters;
     private int initializationMethod;
-    private int numberOfFolds;
+    String clusterCentroids;
+    String clusterSizes;
 
-    public SimpleKMeansResult(long analysis_id, double rmse, double meanAbsoluteError, int correctlyClassified, int incorrectlyClassified, String summary, int numberOfClusters, int initializationMethod, int numberOfFolds) {
+    public SimpleKMeansResult(long analysis_id, double rmse, double meanAbsoluteError, int correctlyClassified, int incorrectlyClassified, String summary, int numberOfClusters, int initializationMethod, String clusterCentroids, String clusterSizes) {
         super(analysis_id, rmse, meanAbsoluteError, correctlyClassified, incorrectlyClassified, summary);
         this.numberOfClusters = numberOfClusters;
         this.initializationMethod = initializationMethod;
-        this.numberOfFolds = numberOfFolds;
+        this.clusterCentroids = clusterCentroids;
+        this.clusterSizes = clusterSizes;
     }
 
     public int getNumberOfClusters() {
@@ -36,11 +38,19 @@ public class SimpleKMeansResult extends AnalysisResult {
         this.initializationMethod = initializationMethod;
     }
 
-    public int getNumberOfFolds() {
-        return numberOfFolds;
+    public String getClusterCentroids() {
+        return clusterCentroids;
     }
 
-    public void setNumberOfFolds(int numberOfFolds) {
-        this.numberOfFolds = numberOfFolds;
+    public void setClusterCentroids(String clusterCentroids) {
+        this.clusterCentroids = clusterCentroids;
+    }
+
+    public String getClusterSizes() {
+        return clusterSizes;
+    }
+
+    public void setClusterSizes(String clusterSizes) {
+        this.clusterSizes = clusterSizes;
     }
 }

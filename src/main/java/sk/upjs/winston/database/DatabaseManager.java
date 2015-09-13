@@ -1,11 +1,8 @@
 package sk.upjs.winston.database;
 
 import sk.upjs.winston.algorithms.*;
-import sk.upjs.winston.computation.RegressionModeling;
 import sk.upjs.winston.model.*;
 
-import javax.management.RuntimeErrorException;
-import javax.xml.crypto.dsig.keyinfo.RetrievalMethod;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -806,18 +803,18 @@ public class DatabaseManager {
             } else if (toSave instanceof AprioriResult) {
                 AprioriResult apriori = (AprioriResult) toSave;
                 insertQuery = "INSERT INTO " + TABLE_ANALYSIS_RESULT
-                        + "(analysis_id, rmse,  mean_absolute_error, correctly_classified, incorrectly_classified, summary, number_of_rules, class, version) " + "VALUES"
+                        + "(analysis_id, rmse,  mean_absolute_error, correctly_classified, incorrectly_classified, summary, number_of_rules, association_rules, class, version) " + "VALUES"
                         + " (" + apriori.getAnalysis_id() + ", " + apriori.getRmse() + ", "
                         + apriori.getMeanAbsoluteError() + ", " + apriori.getCorrectlyClassified() + ", " + apriori.getIncorrectlyClassified() + ",'" + apriori.getSummary() + "', "
-                        + apriori.getNumberOfRules() + ",'"
+                        + apriori.getNumberOfRules() + ",'" + apriori.getAssociationRules() + "', '"
                         + CLASS_WINSTON_APRIORI_RESULT + "', " + DATA_VERSION + ")";
             } else if (toSave instanceof SimpleKMeansResult) {
                 SimpleKMeansResult simpleKMeans = (SimpleKMeansResult) toSave;
                 insertQuery = "INSERT INTO " + TABLE_ANALYSIS_RESULT
-                        + "(analysis_id, rmse,  mean_absolute_error, correctly_classified, incorrectly_classified, summary, number_of_clusters, initialization_method, number_of_folds, class, version) " + "VALUES"
+                        + "(analysis_id, rmse,  mean_absolute_error, correctly_classified, incorrectly_classified, summary, number_of_clusters, initialization_method, cluster_centroids, cluster_sizes, class, version) " + "VALUES"
                         + " (" + simpleKMeans.getAnalysis_id() + ", " + simpleKMeans.getRmse() + ", "
-                        + simpleKMeans.getMeanAbsoluteError() + ", " + simpleKMeans.getCorrectlyClassified() + ", " + simpleKMeans.getIncorrectlyClassified() + ",'" + simpleKMeans.getSummary() + "', '"
-                        + simpleKMeans.getNumberOfClusters() + ", " + simpleKMeans.getInitializationMethod() + ", " + simpleKMeans.getNumberOfFolds() + ",'"
+                        + simpleKMeans.getMeanAbsoluteError() + ", " + simpleKMeans.getCorrectlyClassified() + ", " + simpleKMeans.getIncorrectlyClassified() + ",'" + simpleKMeans.getSummary() + "', "
+                        + simpleKMeans.getNumberOfClusters() + ", " + simpleKMeans.getInitializationMethod() + ", '" + simpleKMeans.getClusterCentroids().replaceAll("'","\\'") + "', '" + simpleKMeans.getClusterSizes() + "','"
                         + CLASS_WINSTON_SIMPLE_K_MEANS_RESULT + "', " + DATA_VERSION + ")";
             }
 
@@ -942,13 +939,15 @@ public class DatabaseManager {
 
     private AnalysisResult parseAprioriResultFromResultSet(Analysis analysis, ResultSet rs, double rmse, double meanAbsoluteError, int correct, int incorrect, String summary) throws SQLException {
         int numberOfRules = rs.getInt("number_of_rules");
-        return new AprioriResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, numberOfRules);
+        String associationRules = rs.getString("association_rules");
+        return new AprioriResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, numberOfRules, associationRules);
     }
 
     private AnalysisResult parseSimpleKMeansResultFromResultSet(Analysis analysis, ResultSet rs, double rmse, double meanAbsoluteError, int correct, int incorrect, String summary) throws SQLException {
         int numberOfClusters = rs.getInt("number_of_clusters");
         int initializationMethod = rs.getInt("initialization_method");
-        int numberOfFolds = rs.getInt("number_of_folds");
-        return new SimpleKMeansResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, numberOfClusters, initializationMethod, numberOfFolds);
+        String clusterCentroids = rs.getString("cluster_centroids");
+        String clusterSizes = rs.getString("cluster_sizes");
+        return new SimpleKMeansResult(analysis.getId(), rmse, meanAbsoluteError, correct, incorrect, summary, numberOfClusters, initializationMethod, clusterCentroids, clusterSizes);
     }
 }

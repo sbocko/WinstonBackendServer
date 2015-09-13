@@ -48,7 +48,9 @@ public class Analyzer {
         try {
             List<Instances> replaced = replaceMissingValues(dataset, arffData);
             for (Instances instances : replaced) {
-                instances.setClassIndex(target.getPositionInDataFile());
+                if(target != null) { // check for pattern mining
+                    instances.setClassIndex(target.getPositionInDataFile());
+                }
             }
 
             List<Instances> preprocessed = generatePreprocessedDataInstances(dataset, replaced, attributesToSplit, target);
@@ -88,7 +90,7 @@ public class Analyzer {
             }
 
             modeling.performAnalysisWithDefaultHyperparameters(analysis);
-            modeling.performRecommendedDataMiningMethodForAnalysis(analysis);
+//            modeling.performRecommendedDataMiningMethodForAnalysis(analysis);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -105,7 +107,7 @@ public class Analyzer {
     protected List<Instances> generatePreprocessedDataInstances(Dataset dataset, List<Instances> toProcess, Map<Attribute, Boolean> attributesToSplit, Attribute target) {
 //        if(1==1)return toProcess;
         for (Attribute datasetAttribute : dataset.getAttributes()) {
-            if (attributesToSplit.get(datasetAttribute)) {
+            if (attributesToSplit.containsKey(datasetAttribute) && attributesToSplit.get(datasetAttribute)) {
                 continue;
             }
 
@@ -133,16 +135,16 @@ public class Analyzer {
             }
         }
 
-        addStringAttributesToBinarization(attributesToSplit, target.getPositionInDataFile());
+        addStringAttributesToBinarization(attributesToSplit, target);
         List<Instances> binarized = generateBinarizedDataInstances(dataset, toProcess, attributesToSplit);
         return binarized;
 //        return toProcess
     }
 
-    protected void addStringAttributesToBinarization(Map<Attribute, Boolean> attributesToSplit, int targetAttributePosition) {
+    protected void addStringAttributesToBinarization(Map<Attribute, Boolean> attributesToSplit, Attribute target) {
         for (Map.Entry<Attribute, Boolean> entry : attributesToSplit.entrySet()) {
             Attribute actual = entry.getKey();
-            if (actual.getPositionInDataFile() != targetAttributePosition && actual instanceof StringAttribute) {
+            if ((target != null || actual.getPositionInDataFile() != target.getPositionInDataFile()) && actual instanceof StringAttribute) {
                 entry.setValue(true);
             }
         }

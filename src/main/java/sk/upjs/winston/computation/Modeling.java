@@ -17,24 +17,17 @@ import java.util.List;
  * Created by stefan on 2/16/15.
  */
 public abstract class Modeling {
-
-
-
-    //pattern mining weights
-    protected static final double WEIGHT_APRIORI = 0.5d;
-    protected static final double WEIGHT_SIMPLE_K_MEANS = 0.5d;
-
-
-
-
     protected static final double INSTANCES_INTERVAL_SIZE = 12960 - 15d;
     protected static final double ATTRIBUTES_INTERVAL_SIZE = 71 - 1d;
     protected static final double MISSING_VALUES_INTERVAL_SIZE = 19692d;
     protected DatabaseManager databaseManager = new DatabaseManager();
 
     public abstract void performRecommendedDataMiningMethodForAnalysis(Analysis analysis) throws IOException;
+
     public abstract void performAnalysisWithDefaultHyperparameters(Analysis analysis) throws IOException;
+
     protected abstract void gridSearch(Analysis analysis, Instances dataInstances);
+
     protected abstract double computeDistanceForAnalyses(Analysis analysis1, Analysis analysis2);
 
     public void performGridsearchAnalysisForFile(Analysis analysis) throws IOException {
@@ -46,7 +39,9 @@ public abstract class Modeling {
                 new FileReader(arffFile));
         Instances dataInstances = new Instances(reader);
         reader.close();
-        dataInstances.setClassIndex(dataInstances.numAttributes() - 1);
+        if (!Analysis.TASK_PATTERN_MINING.equals(analysis.getTask())) {
+            dataInstances.setClassIndex(dataInstances.numAttributes() - 1);
+        }
 
         String email = analysis.getDataset().getUser().getEmail();
         String filename = analysis.getDataFile();

@@ -13,9 +13,9 @@ public class DatabaseConnectionFactory {
     private static DatabaseConnectionFactory instance = new DatabaseConnectionFactory();
     // JDBC driver name and database URL
     static final String TEST_JDBC_DRIVER = "com.mysql.jdbc.Driver";
-    static final String TEST_DB_URL = "jdbc:mysql://stefanbocko.sk/nh2096401db?useUnicode=yes&characterEncoding=UTF-8";
-    static final String TEST_USER = "nh2096401";
-    static final String TEST_PASS = "taraystol";
+    static final String TEST_DB_URL = "jdbc:mysql://db4free.org/winstondb?useUnicode=yes&characterEncoding=UTF-8";
+    static final String TEST_USER = "winston";
+    static final String TEST_PASS = "PRe-U9T-kKm-hPK";
 
     static final String PROD_JDBC_DRIVER = "com.mysql.jdbc.Driver";
     static final String PROD_DB_URL = "jdbc:mysql://158.197.29.209/Winston?useUnicode=yes&characterEncoding=UTF-8";

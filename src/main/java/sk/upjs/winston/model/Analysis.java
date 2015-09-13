@@ -14,7 +14,7 @@ public class Analysis {
 
     public static final String TASK_CLASSIFICATION = "CLASSIFICATION";
     public static final String TASK_REGRESSION = "REGRESSION";
-    public static final String TASK_PATTERN_MINING = "PATTERN_MINING";
+    public static final String TASK_PATTERN_MINING = "PATTERN";
 
     private long id;
     private Dataset dataset;
