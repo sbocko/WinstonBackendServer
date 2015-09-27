@@ -81,7 +81,7 @@ public class SimpleKMeansModel extends Model {
             int numberOfClusters = trained.numberOfClusters();
             String clusterCentroids = trained.getClusterCentroids().toString();
             String clusterSizes = getClusterSizesForModel(trained);
-            AnalysisResult result = new SimpleKMeansResult(analysis.getId(), trained.getSquaredError(), 0, 0, 0, "", numberOfClusters, initializationMethod, clusterCentroids, clusterSizes);
+            AnalysisResult result = new SimpleKMeansResult(analysis.getId(), AnalysisResult.RMSE_UNDEFINED, 0, 0, 0, "", numberOfClusters, initializationMethod, clusterCentroids, clusterSizes);
 
             return result;
         } catch (Exception e) {

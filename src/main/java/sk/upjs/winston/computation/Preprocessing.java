@@ -1,6 +1,5 @@
 package sk.upjs.winston.computation;
 
-import sk.upjs.winston.helper.Mailer;
 import sk.upjs.winston.model.Attribute;
 import sk.upjs.winston.model.Dataset;
 import sk.upjs.winston.model.NumericAttribute;
@@ -53,13 +52,17 @@ public class Preprocessing {
         int numberOfAttributes = toBinarize.numAttributes();
         Set<String> attributeNames = new HashSet<String>(numberOfAttributes);
         for (Map.Entry<Attribute, Boolean> entry : attributesToSplit.entrySet()) {
-            if (entry.getValue()){
+            if (entry.getValue()) {
                 attributeNames.add(entry.getKey().getTitle());
             }
         }
 
         for (int attributePosition = numberOfAttributes - 1; attributePosition >= 0; attributePosition--) {
             // iterate attributes from the end
+            if (toBinarize.classAttribute().index() == toBinarize.attribute(attributePosition).index()) {
+                System.out.println("omitting class attribute for binarization");
+                continue;
+            }
 
             // split attribute at attributePosition
             weka.core.Attribute toSplit = toBinarize.attribute(attributePosition);

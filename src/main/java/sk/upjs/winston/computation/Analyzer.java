@@ -34,6 +34,9 @@ public class Analyzer {
             BufferedReader r = new BufferedReader(
                     new FileReader(arffData));
             Instances original = new Instances(r);
+            if (target != null) { // check for pattern mining
+                original.setClassIndex(target.getPositionInDataFile());
+            }
             original = binarizeDataInstances(dataset, original, attributesToSplit);
             String fileName = saveInstancesToFiles(original, dataset.getTitle());
             createAnalysis(dataset, task, fileName, original);
@@ -48,7 +51,7 @@ public class Analyzer {
         try {
             List<Instances> replaced = replaceMissingValues(dataset, arffData);
             for (Instances instances : replaced) {
-                if(target != null) { // check for pattern mining
+                if (target != null) { // check for pattern mining
                     instances.setClassIndex(target.getPositionInDataFile());
                 }
             }

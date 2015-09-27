@@ -49,7 +49,7 @@ public class AprioriModel extends Model {
                 for (AssociationRule associationRule : trained.getAssociationRules().getRules()) {
                     associations += associationRule + "\n";
                 }
-                AnalysisResult aprioriResult = new AprioriResult(analysis.getId(), 0, 0, 0, 0, "", rules, associations);
+                AnalysisResult aprioriResult = new AprioriResult(analysis.getId(), AnalysisResult.RMSE_UNDEFINED, 0, 0, 0, "", rules, associations);
                 if (aprioriResult != null) {
                     results.add(aprioriResult);
                 }

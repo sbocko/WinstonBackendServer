@@ -49,7 +49,7 @@ public class PatternMiningModeling extends Modeling {
             String clusterCentroids = simpleKMeans.getClusterCentroids().toString();
             String clusterSizes = SimpleKMeansModel.getClusterSizesForModel(simpleKMeans);
 
-            res = new SimpleKMeansResult(analysis.getId(), 0, 0, 0, 0, "", numberOfClusters, initMethod, clusterCentroids, clusterSizes);
+            res = new SimpleKMeansResult(analysis.getId(), AnalysisResult.RMSE_UNDEFINED, 0, 0, 0, "", numberOfClusters, initMethod, clusterCentroids, clusterSizes);
             databaseManager.saveAnalysisResult(res);
         }
 
@@ -60,7 +60,7 @@ public class PatternMiningModeling extends Modeling {
             for (AssociationRule rule : rules) {
                 associationRules += rule.toString() + "\n";
             }
-            res = new AprioriResult(analysis.getId(), 0, 0, 0, 0, "", apriori.getNumRules(), associationRules);
+            res = new AprioriResult(analysis.getId(), AnalysisResult.RMSE_UNDEFINED, 0, 0, 0, "", apriori.getNumRules(), associationRules);
             databaseManager.saveAnalysisResult(res);
         }
     }

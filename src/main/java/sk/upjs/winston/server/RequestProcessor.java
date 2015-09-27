@@ -118,6 +118,7 @@ public class RequestProcessor implements Runnable {
         if (!Analysis.TASK_PATTERN_MINING.equals(task)) {
             long targetAttributeId = dataInput.readLong();
             target = databaseManager.getAttribute(targetAttributeId);
+            System.out.println("TARGET ATTRIBUTE POSITION: " + target.getPositionInDataFile());
 
             int numberOfAttributesToBinarize = dataInput.readInt();
             System.out.println("ATTRS TO BINARIZE: " + numberOfAttributesToBinarize);

@@ -1,14 +1,15 @@
 package sk.upjs.winston.server;
 
-import weka.classifiers.Evaluation;
-import weka.classifiers.functions.LibSVM;
+import sk.upjs.winston.computation.Preprocessing;
+import sk.upjs.winston.model.BooleanAttribute;
+import weka.core.Attribute;
 import weka.core.Instances;
-import weka.core.SelectedTag;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.util.Random;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by stefan on 3/2/15.
@@ -60,11 +61,20 @@ public class Test {
 //    }
 
     public static void main(String[] args) throws Exception {
-        File arffFile = new File("datasets/iris(Tf06KTbDb).arff");
-        BufferedReader reader = new BufferedReader(
-                new FileReader(arffFile));
-        Instances dataInstances = new Instances(reader);
-        reader.close();
+//        File arffFile = new File("datasets/iris(Tf06KTbDb).arff");
+//        BufferedReader reader = new BufferedReader(
+//                new FileReader(arffFile));
+//        Instances dataInstances = new Instances(reader);
+//        reader.close();
+//
+//
+//        Map<Attribute, Boolean> toSplit = new HashMap<Attribute, Boolean>();
+//        for (int i = 0; i < dataInstances.numAttributes(); i++) {
+//            toSplit.put(dataInstances.attribute(i),true);
+//        }
+//
+//        Preprocessing preprocessingStep = new Preprocessing();
+//        preprocessingStep.binarize(null, dataInstances, toSplit);
 
 //        PrintStream printStreamOriginal = System.out;
 //        System.setOut(new PrintStream(new OutputStream() {
@@ -97,22 +107,22 @@ public class Test {
 //            i++;
 //        }
 
-
-        dataInstances.setClassIndex(dataInstances.numAttributes() - 1);
-
-        LibSVM svm = new LibSVM();
-        svm.setCost(0.1);
-        svm.setGamma(0.1);
-        svm.setKernelType(new SelectedTag(LibSVM.KERNELTYPE_LINEAR, LibSVM.TAGS_KERNELTYPE));
-
-        svm.buildClassifier(dataInstances);
-        Evaluation evaluation = new Evaluation(dataInstances);
-        evaluation.crossValidateModel(svm, dataInstances, 5, new Random(1));
-
-//        System.setOut(printStreamOriginal);
-
-
-        System.out.println(evaluation.toSummaryString());
+//
+//        dataInstances.setClassIndex(dataInstances.numAttributes() - 1);
+//
+//        LibSVM svm = new LibSVM();
+//        svm.setCost(0.1);
+//        svm.setGamma(0.1);
+//        svm.setKernelType(new SelectedTag(LibSVM.KERNELTYPE_LINEAR, LibSVM.TAGS_KERNELTYPE));
+//
+//        svm.buildClassifier(dataInstances);
+//        Evaluation evaluation = new Evaluation(dataInstances);
+//        evaluation.crossValidateModel(svm, dataInstances, 5, new Random(1));
+//
+////        System.setOut(printStreamOriginal);
+//
+//
+//        System.out.println(evaluation.toSummaryString());
 
     }
 }

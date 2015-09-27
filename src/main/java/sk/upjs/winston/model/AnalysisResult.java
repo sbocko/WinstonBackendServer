@@ -4,6 +4,7 @@ package sk.upjs.winston.model;
  * Created by stefan on 2/15/15.
  */
 public class AnalysisResult {
+    public static final double RMSE_UNDEFINED = 1234567890d;
     private long analysis_id;
     private double rmse;
     private double meanAbsoluteError;
